@@ -219,18 +219,37 @@ func copyEltNamesToAnonTypes(root *xmltree.Element) {
 		hasAttr("", "name"),
 		hasAnonymousType)
 
-	for _, el := range root.SearchFunc(eltWithAnonType) {
+	for i, el := range root.Children {
+		for _, el := range el.SearchFunc(eltWithAnonType) {
+			// Make sure we can use this element's name
+			xmlname := el.ResolveDefault(el.Attr("", "name"), tns)
+			if _, ok := used[xmlname]; ok {
+				continue
+			}
+			used[xmlname] = struct{}{}
+			for i, t := range el.Children {
+				if !isAnonymousType(&t) {
+					continue
+				}
+				t.SetAttr("", "name", el.Attr("", "name"))
+				el.SetAttr("", "type", el.Prefix(xmlname))
+
+				el.Children = append(el.Children[:i], el.Children[i+1:]...)
+				el.Content = nil
+				root.Children = append(root.Children, t)
+				break
+			}
+		}
+
 		// Make sure we can use this element's name
 		xmlname := el.ResolveDefault(el.Attr("", "name"), tns)
-		if _, ok := used[xmlname]; ok {
-			continue
-		}
-		used[xmlname] = struct{}{}
+
 		for i, t := range el.Children {
 			if !isAnonymousType(&t) {
 				continue
 			}
 			t.SetAttr("", "name", el.Attr("", "name"))
+			t.SetAttr("", "_isTopLevel", "true")
 			el.SetAttr("", "type", el.Prefix(xmlname))
 
 			el.Children = append(el.Children[:i], el.Children[i+1:]...)
@@ -238,7 +257,10 @@ func copyEltNamesToAnonTypes(root *xmltree.Element) {
 			root.Children = append(root.Children, t)
 			break
 		}
+
+		root.Children[i] = el
 	}
+
 }
 
 // Inside a <xs:choice>, set all children to optional
@@ -666,8 +688,9 @@ func (s *Schema) parseComplexType(root *xmltree.Element) *ComplexType {
 	t.Abstract = parseBool(root.Attr("", "abstract"))
 	t.Mixed = parseBool(root.Attr("", "mixed"))
 
-	// We set this special attribute in a pre-processing step.
+	// We set this special attributes in a pre-processing step.
 	t.Anonymous = (root.Attr("", "_isAnonymous") == "true")
+	t.TopLevel = (root.Attr("", "_isTopLevel") == "true")
 
 	walk(root, func(el *xmltree.Element) {
 		switch el.Name.Local {
@@ -894,6 +917,7 @@ func (s *Schema) parseSimpleType(root *xmltree.Element) *SimpleType {
 
 	t.Name = root.ResolveDefault(root.Attr("", "name"), s.TargetNS)
 	t.Anonymous = (root.Attr("", "_isAnonymous") == "true")
+	t.TopLevel = (root.Attr("", "_isTopLevel") == "true")
 	walk(root, func(el *xmltree.Element) {
 		switch el.Name.Local {
 		case "restriction":

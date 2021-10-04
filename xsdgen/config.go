@@ -16,15 +16,16 @@ import (
 // A Config holds user-defined overrides and filters that are used when
 // generating Go source code from an xsd document.
 type Config struct {
-	logger          Logger
-	loglevel        int
-	namespaces      []string
-	pkgname         string
+	logger     Logger
+	loglevel   int
+	namespaces []string
+	pkgname    string
 	// load xsd imports recursively into memory before parsing
-	followImports        bool
-	targetNamespacesOnly bool
-	preprocessType       typeTransform
-	postprocessType      specTransform
+	followImports                      bool
+	targetNamespacesOnly               bool
+	applyXMLNameToTopLevelElementTypes bool
+	preprocessType                     typeTransform
+	postprocessType                    specTransform
 	// Helper functions
 	helperFuncs map[string]*ast.FuncDecl
 	helperTypes map[xml.Name]spec
@@ -249,14 +250,25 @@ func FollowImports(follow bool) Option {
 }
 
 // TargetNamespacesOnly specifies whether or
-// not to filter
-// to recursively read in imported schemas
-// before attempting to parse
+// not to filter output to types generated in
+// the namespaces defined
 func TargetNamespacesOnly(tnsOnly bool) Option {
 	return func(cfg *Config) Option {
 		prev := cfg.targetNamespacesOnly
 		cfg.targetNamespacesOnly = tnsOnly
 		return TargetNamespacesOnly(prev)
+	}
+}
+
+// ApplyXMLNameToTopLevelElementTypes specifies
+// whether or not to apply XMLName to the
+// structs that are generated for anonymous
+// complexTypes inside top level elements
+func ApplyXMLNameToTopLevelElementTypes(applyXMLName bool) Option {
+	return func(cfg *Config) Option {
+		prev := cfg.applyXMLNameToTopLevelElementTypes
+		cfg.applyXMLNameToTopLevelElementTypes = applyXMLName
+		return ApplyXMLNameToTopLevelElementTypes(prev)
 	}
 }
 

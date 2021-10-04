@@ -166,6 +166,8 @@ type ComplexType struct {
 	Base Type
 	// True if this is an anonymous type
 	Anonymous bool
+	// True if this is an toplevel anonymous type
+	TopLevel bool
 	// XML elements that this type may contain in its content.
 	Elements []Element
 	// Possible attributes for the element's opening tag.
@@ -200,6 +202,9 @@ func (*ComplexType) isType() {}
 type SimpleType struct {
 	// True if this is an anonymous type
 	Anonymous bool
+	// True if this is an toplevel anonymous type
+	TopLevel bool
+
 	// True if this type is a whitespace-delimited list, with
 	// items of type Base.
 	List bool

@@ -697,7 +697,7 @@ func (cfg *Config) genComplexType(t *xsd.ComplexType) ([]spec, error) {
 	cfg.debugf("complexType %s: generating struct fields for %d elements and %d attributes",
 		xsd.XMLName(t).Local, len(elements), len(attributes))
 
-	if t.TopLevel && cfg.ApplyXMLNameToTopLevelElementTypes {
+	if t.TopLevel && cfg.applyXMLNameToTopLevelElementTypes {
 		tag := ""
 		if t.Name.Space == "" {
 			tag = fmt.Sprintf(`xml:"%s"`, t.Name.Local)

@@ -134,6 +134,7 @@ func (cfg *Config) GenCLI(arguments ...string) error {
 		packageName                        = fs.String("pkg", "", "name of the the generated package")
 		output                             = fs.String("o", "xsdgen_output.go", "name of the output file")
 		followImports                      = fs.Bool("f", false, "follow import statements; load imported references recursively into scope")
+		addJsonTags                        = fs.Bool("json", false, "add json tags to struct tag so that the json name equals the xml name")
 		targetNamespacesOnly               = fs.Bool("t", false, "restict output of types to these declared in the target namespace(s) provided")
 		applyXMLNameToTopLevelElementTypes = fs.Bool("n", false, "apply XMLName to all top level element types")
 		verbose                            = fs.Bool("v", false, "print verbose output")
@@ -155,6 +156,7 @@ func (cfg *Config) GenCLI(arguments ...string) error {
 	}
 	cfg.Option(Namespaces(xmlns...))
 	cfg.Option(FollowImports(*followImports))
+	cfg.Option(AddJSONTags(*addJsonTags))
 	cfg.Option(TargetNamespacesOnly(*targetNamespacesOnly))
 	cfg.Option(ApplyXMLNameToTopLevelElementTypes(*applyXMLNameToTopLevelElementTypes))
 	for _, r := range replaceRules {

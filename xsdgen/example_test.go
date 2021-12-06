@@ -161,7 +161,7 @@ func ExampleReplace() {
 	//
 	// type StringArray struct {
 	// 	Items     []string `xml:",any"`
-	// 	ArrayType string   `xml:"arrayType,attr,omitempty"`
+	// 	ArrayType *string  `xml:"arrayType,attr,omitempty"`
 	// }
 }
 
@@ -189,10 +189,10 @@ func ExampleHandleSOAPArrayType() {
 	// package ws
 	//
 	// type BoolArray struct {
-	// 	Items  []bool `xml:",any"`
-	// 	Offset string `xml:"http://schemas.xmlsoap.org/soap/encoding/ offset,attr,omitempty"`
-	// 	Id     string `xml:"id,attr,omitempty"`
-	// 	Href   string `xml:"href,attr,omitempty"`
+	// 	Items  []bool  `xml:",any"`
+	// 	Offset *string `xml:"http://schemas.xmlsoap.org/soap/encoding/ offset,attr,omitempty"`
+	// 	Id     *string `xml:"id,attr,omitempty"`
+	// 	Href   *string `xml:"href,attr,omitempty"`
 	// }
 }
 
@@ -296,7 +296,7 @@ func ExampleUseFieldNames() {
 	// 	Author    string    `xml:"author"`
 	// }
 	//
-	//func (t *Book) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	// func (t *Book) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	//	type T Book
 	//	var layout struct {
 	//		*T
@@ -305,17 +305,17 @@ func ExampleUseFieldNames() {
 	//	layout.T = (*T)(t)
 	//	layout.Published = (*xsdDate)(&layout.T.Published)
 	//	return e.EncodeElement(layout, start)
-	//}
-	//func (t *Book) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	// }
+	// func (t *Book) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	//	type T Book
 	//	var overlay struct {
 	//		*T
-	//		Published *xsdDate `xml:"published"`
-	//	}
-	//	overlay.T = (*T)(t)
-	//	overlay.Published = (*xsdDate)(&overlay.T.Published)
-	//	return d.DecodeElement(&overlay, &start)
-	//}
+	// 		Published *xsdDate `xml:"published"`
+	// 	}
+	// 	overlay.T = (*T)(t)
+	// 	overlay.Published = (*xsdDate)(&overlay.T.Published)
+	// 	return d.DecodeElement(&overlay, &start)
+	// }
 	//
 	// type Library struct {
 	// 	Book []Book `xml:"book"`

@@ -359,11 +359,11 @@ func (cfg *Config) expandComplexTypes(types []xsd.Type) []xsd.Type {
 // type that the user wants included in the Go source. In affect, what we
 // want to do is take the linked list:
 //
-// 	t1 -> t2 -> t3 -> builtin
+//	t1 -> t2 -> t3 -> builtin
 //
 // And produce a set of tuples:
 //
-// 	t1 -> builtin, t2 -> builtin, t3 -> builtin
+//	t1 -> builtin, t2 -> builtin, t3 -> builtin
 //
 // This is a heuristic that tends to generate better-looking Go code.
 func (cfg *Config) flatten(types map[xml.Name]xsd.Type) []xsd.Type {
@@ -731,6 +731,9 @@ func (cfg *Config) genComplexType(t *xsd.ComplexType) ([]spec, error) {
 		} else {
 			tag = fmt.Sprintf(`xml:"%s%s"`, el.Name.Local, options)
 		}
+		if cfg.addJSONTags {
+			tag = fmt.Sprintf(`json:"%s%s" %s`, el.Name.Local, options, tag)
+		}
 
 		base, err := cfg.expr(el.Type)
 		if err != nil {
@@ -788,6 +791,9 @@ func (cfg *Config) genComplexType(t *xsd.ComplexType) ([]spec, error) {
 			tag = fmt.Sprintf(`xml:"%s %s,attr%s"`, attr.Name.Space, attr.Name.Local, options)
 		} else {
 			tag = fmt.Sprintf(`xml:"%s,attr%s"`, attr.Name.Local, options)
+		}
+		if cfg.addJSONTags {
+			tag = fmt.Sprintf(`json:"%s%s" %s`, attr.Name.Local, options, tag)
 		}
 		base, err := cfg.expr(attr.Type)
 		if err != nil {

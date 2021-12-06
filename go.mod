@@ -1,8 +1,14 @@
 module aqwari.net/xml
 
-go 1.15
+go 1.21
 
 require (
-	golang.org/x/net v0.0.0-20200813134508-3edf25e44fcc
-	golang.org/x/tools v0.0.0-20200821192610-3366bbee4705
+	golang.org/x/net v0.15.0
+	golang.org/x/tools v0.13.0
+)
+
+require (
+	golang.org/x/mod v0.12.0 // indirect
+	golang.org/x/sys v0.12.0 // indirect
+	golang.org/x/text v0.13.0 // indirect
 )

@@ -10,17 +10,17 @@ import (
 )
 
 type Bindata struct {
-	HexData  []byte `xml:"tns hexData"`
-	B64Data  []byte `xml:"tns b64Data"`
-	Filename string `xml:"tns filename"`
+	HexData  []byte `xml:"hexData"`
+	B64Data  []byte `xml:"b64Data"`
+	Filename string `xml:"filename"`
 }
 
 func (t *Bindata) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	type T Bindata
 	var layout struct {
 		*T
-		HexData *xsdHexBinary    `xml:"tns hexData"`
-		B64Data *xsdBase64Binary `xml:"tns b64Data"`
+		HexData *xsdHexBinary    `xml:"hexData"`
+		B64Data *xsdBase64Binary `xml:"b64Data"`
 	}
 	layout.T = (*T)(t)
 	layout.HexData = (*xsdHexBinary)(&layout.T.HexData)
@@ -31,8 +31,8 @@ func (t *Bindata) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	type T Bindata
 	var overlay struct {
 		*T
-		HexData *xsdHexBinary    `xml:"tns hexData"`
-		B64Data *xsdBase64Binary `xml:"tns b64Data"`
+		HexData *xsdHexBinary    `xml:"hexData"`
+		B64Data *xsdBase64Binary `xml:"b64Data"`
 	}
 	overlay.T = (*T)(t)
 	overlay.HexData = (*xsdHexBinary)(&overlay.T.HexData)

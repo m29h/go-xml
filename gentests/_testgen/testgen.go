@@ -81,10 +81,10 @@ func writeTestFiles(code, tests *ast.File, pkg string) error {
 // schema-generated code. The unit test will do the
 // following:
 //
-// - Unmarshal the sample data (dataFile) into a struct representing
-//   the document described in the XML schema.
-// - Marshal the resulting file back into an XML document.
-// - Compare the two documents for equality.
+//   - Unmarshal the sample data (dataFile) into a struct representing
+//     the document described in the XML schema.
+//   - Marshal the resulting file back into an XML document.
+//   - Compare the two documents for equality.
 //
 // Returns type definitions and unit tests as separate files.
 func genXSDTests(cfg xsdgen.Config, data []byte, pkg string) (code, tests *ast.File, err error) {

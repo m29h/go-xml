@@ -44,6 +44,9 @@ type Config struct {
 	// if populated, only types that are true in this map
 	// will be selected.
 	allowTypes map[xml.Name]bool
+
+	// keep track of files that are read already to avoid reading it again
+	filesRead map[string]bool
 }
 
 type typeTransform func(xsd.Schema, xsd.Type) xsd.Type

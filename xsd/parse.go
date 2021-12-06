@@ -153,7 +153,14 @@ func Parse(docs ...[]byte) ([]Schema, error) {
 		if err := s.parse(root); err != nil {
 			return nil, err
 		}
-		parsed[tns] = s
+		// schema already exists, so merge types with new ones
+		if ps, ok := parsed[tns]; ok {
+			for name, newType := range s.Types {
+				ps.Types[name] = newType
+			}
+		} else {
+			parsed[tns] = s
+		}
 	}
 
 	for _, s := range parsed {

@@ -1014,40 +1014,35 @@ func parseSimpleRestriction(root *xmltree.Element, base Type) Restriction {
 
 // For minInclusive, minExclusive, maxInclusive and maxExclusive restrictions
 func parseMinMaxRestriction(el *xmltree.Element, base Type) (time.Time, float64) {
-	var date time.Time
-	var decimal float64
-	if v, ok := base.(Builtin); ok {
+	value := el.Attr("", "value")
+	switch v := base.(type) {
+	case Builtin:
 		var format string
 		if v == Date {
 			format = "2006-01-02"
 		} else if v == DateTime {
 			format = time.RFC3339
+		} else { // Not a Date or DateTime
+			break
 		}
 
-		if format != "" {
-			d, err := time.Parse(format, el.Attr("", "value"))
-			if err != nil {
-				stop(err.Error())
-			}
-			date = d
+		if d, err := time.Parse(format, value); err == nil {
+			return d, 0
 		} else {
-			decimal = parseDecimal(el.Attr("", "value"))
+			stop(err.Error())
 		}
-	} else if _, ok := base.(linkedType); ok {
+
+	case linkedType:
 		// The base of the linked type is unknown, try to parse dates and decimals
-		d, err := time.Parse("2006-01-02", el.Attr("", "value"))
-		if err != nil {
-			d, err := time.Parse(time.RFC3339, el.Attr("", "value"))
-			if err != nil {
-				decimal = parseDecimal(el.Attr("", "value"))
-			}
-			date = d
+		if d, err := time.Parse("2006-01-02", value); err == nil {
+			return d, 0
 		}
-		date = d
-	} else {
-		decimal = parseDecimal(el.Attr("", "value"))
+		if d, err := time.Parse(time.RFC3339, value); err == nil {
+			return d, 0
+		}
 	}
-	return date, decimal
+
+	return time.Time{}, parseDecimal(value)
 }
 
 // XML Schema defines its own flavor of regular expressions here:

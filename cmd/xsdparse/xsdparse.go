@@ -3,7 +3,6 @@ package main // import "aqwari.net/xml/cmd/xsdparse"
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 
@@ -26,7 +25,7 @@ func main() {
 	docs := make([][]byte, 0, flag.NArg())
 
 	for _, filename := range flag.Args() {
-		if data, err := ioutil.ReadFile(filename); err != nil {
+		if data, err := os.ReadFile(filename); err != nil {
 			log.Fatal(err)
 		} else {
 			docs = append(docs, data)

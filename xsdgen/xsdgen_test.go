@@ -1,7 +1,6 @@
 package xsdgen
 
 import (
-	"io/ioutil"
 	"os"
 	"regexp"
 	"testing"
@@ -37,7 +36,7 @@ func TestSimpleStruct(t *testing.T) {
 	testGen(t, "http://example.org/ns", "testdata/simple-struct.xsd")
 }
 func testGen(t *testing.T, ns string, files ...string) string {
-	file, err := ioutil.TempFile("", "xsdgen")
+	file, err := os.CreateTemp("", "xsdgen")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,7 +51,7 @@ func testGen(t *testing.T, ns string, files ...string) string {
 	if err != nil {
 		t.Error(err)
 	}
-	data, err := ioutil.ReadFile(file.Name())
+	data, err := os.ReadFile(file.Name())
 	if err != nil {
 		t.Fatal(err)
 	}

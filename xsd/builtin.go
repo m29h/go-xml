@@ -86,7 +86,7 @@ func (b Builtin) Name() xml.Name {
 		r, sz := utf8.DecodeRuneInString(name)
 		name = string(unicode.ToLower(r)) + name[sz:]
 	}
-	return xml.Name{space, name}
+	return xml.Name{Space: space, Local: name}
 }
 
 // ParseBuiltin looks up a Builtin by name. If qname

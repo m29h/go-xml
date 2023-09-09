@@ -17,10 +17,10 @@ type ArrayOfxsdstring []string
 func (a ArrayOfxsdstring) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	var output struct {
 		ArrayType string   `xml:"http://schemas.xmlsoap.org/wsdl/ arrayType,attr"`
-		Items     []string `xml:" item"`
+		Items     []string `xml:"item"`
 	}
 	output.Items = []string(a)
-	start.Attr = append(start.Attr, xml.Attr{Name: xml.Name{"", "xmlns:ns1"}, Value: "http://www.w3.org/2001/XMLSchema"})
+	start.Attr = append(start.Attr, xml.Attr{Name: xml.Name{Local: "xmlns:ns1"}, Value: "http://www.w3.org/2001/XMLSchema"})
 	output.ArrayType = "ns1:string[]"
 	return e.EncodeElement(&output, start)
 }

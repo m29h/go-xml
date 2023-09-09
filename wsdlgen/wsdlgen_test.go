@@ -1,7 +1,6 @@
 package wsdlgen
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -15,7 +14,7 @@ type testLogger struct {
 func (t testLogger) Printf(format string, args ...interface{}) { t.Logf(format, args...) }
 
 func testGen(t *testing.T, files ...string) {
-	output_file, err := ioutil.TempFile("", "wsdlgen")
+	output_file, err := os.CreateTemp("", "wsdlgen")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,7 +32,7 @@ func testGen(t *testing.T, files ...string) {
 		t.Error(err)
 		return
 	}
-	if data, err := ioutil.ReadFile(output_file.Name()); err != nil {
+	if data, err := os.ReadFile(output_file.Name()); err != nil {
 		t.Error(err)
 	} else {
 		t.Logf("\n%s\n", data)

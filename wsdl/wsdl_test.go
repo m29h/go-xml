@@ -1,7 +1,7 @@
 package wsdl
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 )
@@ -16,7 +16,7 @@ func glob(pat string) []string {
 
 func TestParse(t *testing.T) {
 	for _, filename := range glob("testdata/*.wsdl") {
-		data, err := ioutil.ReadFile(filename)
+		data, err := os.ReadFile(filename)
 		if err != nil {
 			t.Error(err)
 			continue

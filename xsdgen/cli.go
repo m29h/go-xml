@@ -5,7 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"go/ast"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -57,6 +57,9 @@ func (cfg *Config) GenCode(data ...[]byte) (*Code, error) {
 func (cfg *Config) GenAST(files ...string) (*ast.File, error) {
 	cfg.filesRead = make(map[string]bool)
 	data, err := cfg.readFiles(files...)
+	if err != nil {
+		return nil, err
+	}
 	code, err := cfg.GenCode(data...)
 	if err != nil {
 		return nil, err
@@ -77,7 +80,7 @@ func (cfg *Config) readFiles(files ...string) ([][]byte, error) {
 		}
 		cfg.filesRead[path] = true
 
-		b, err := ioutil.ReadFile(path)
+		b, err := os.ReadFile(path)
 		if err != nil {
 			return nil, err
 		}
@@ -100,10 +103,7 @@ func (cfg *Config) readFiles(files ...string) ([][]byte, error) {
 			if err != nil {
 				return nil, fmt.Errorf("error reading imported files: %v", err)
 			}
-			for _, d := range referencedData {
-				// prepend imported refs (i.e. append before the referencing file)
-				data = append(data, d)
-			}
+			data = append(data, referencedData...)
 		}
 		data = append(data, b)
 	}
@@ -147,7 +147,7 @@ func (cfg *Config) GenCLI(arguments ...string) error {
 		return err
 	}
 	if fs.NArg() == 0 {
-		return errors.New("Usage: xsdgen [-ns xmlns] [-r rule] [-o file] [-pkg pkg] file ...")
+		return errors.New("usage: xsdgen [-ns xmlns] [-r rule] [-o file] [-pkg pkg] file")
 	}
 	if *debug {
 		cfg.Option(LogLevel(5))
@@ -175,5 +175,5 @@ func (cfg *Config) GenCLI(arguments ...string) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(*output, data, 0666)
+	return os.WriteFile(*output, data, 0666)
 }

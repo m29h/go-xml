@@ -6,16 +6,16 @@ import (
 	"encoding/xml"
 	"fmt"
 	"go/ast"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"aqwari.net/xml/internal/gen"
 	"aqwari.net/xml/xmltree"
 	"aqwari.net/xml/xsd"
 	"aqwari.net/xml/xsdgen"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 func glob(pat string) string {
@@ -65,7 +65,7 @@ func writeTestFiles(code, tests *ast.File, pkg string) error {
 	if err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(testFilename, testSrc, 0666); err != nil {
+	if err := os.WriteFile(testFilename, testSrc, 0666); err != nil {
 		return err
 	}
 
@@ -74,7 +74,7 @@ func writeTestFiles(code, tests *ast.File, pkg string) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(codeFilename, codeSrc, 0666)
+	return os.WriteFile(codeFilename, codeSrc, 0666)
 }
 
 // Generates unit tests for xml marshal unmarshalling of
@@ -131,7 +131,7 @@ func genXSDTests(cfg xsdgen.Config, data []byte, pkg string) (code, tests *ast.F
 	}
 	params.DocStruct = expr
 	params.Pkg = pkg
-	fn, err := gen.Func("Test"+strings.Title(pkg)).
+	fn, err := gen.Func("Test"+cases.Title(language.Und, cases.NoLower).String(pkg)).
 		Args("t *testing.T").
 		BodyTmpl(`
 			type Document {{.DocStruct}}
@@ -144,7 +144,7 @@ func genXSDTests(cfg xsdgen.Config, data []byte, pkg string) (code, tests *ast.F
 				t.Fatal("expected one sample file, found ", samples)
 			}
 			
-			input, err := ioutil.ReadFile(samples[0])
+			input, err := os.ReadFile(samples[0])
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -220,7 +220,7 @@ func findXSDTestCases() ([]testCase, error) {
 	}
 	result := make([]testCase, 0, len(filenames))
 	for _, xsdfile := range filenames {
-		if data, err := ioutil.ReadFile(xsdfile); err != nil {
+		if data, err := os.ReadFile(xsdfile); err != nil {
 			return nil, err
 		} else {
 			result = append(result, testCase{

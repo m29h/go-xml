@@ -2,7 +2,6 @@ package xsdgen_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 
@@ -10,7 +9,7 @@ import (
 )
 
 func tmpfile() *os.File {
-	f, err := ioutil.TempFile("", "xsdgen_test")
+	f, err := os.CreateTemp("", "xsdgen_test")
 	if err != nil {
 		panic(err)
 	}
@@ -231,10 +230,10 @@ func ExampleSOAPArrayAsSlice() {
 	// func (a BoolArray) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	// 	var output struct {
 	// 		ArrayType string `xml:"http://schemas.xmlsoap.org/wsdl/ arrayType,attr"`
-	// 		Items     []bool `xml:" item"`
+	// 		Items     []bool `xml:"item"`
 	// 	}
 	// 	output.Items = []bool(a)
-	// 	start.Attr = append(start.Attr, xml.Attr{Name: xml.Name{"", "xmlns:ns1"}, Value: "http://www.w3.org/2001/XMLSchema"})
+	// 	start.Attr = append(start.Attr, xml.Attr{Name: xml.Name{Local: "xmlns:ns1"}, Value: "http://www.w3.org/2001/XMLSchema"})
 	// 	output.ArrayType = "ns1:boolean[]"
 	// 	return e.EncodeElement(&output, start)
 	// }

@@ -2,7 +2,7 @@ package xmltree
 
 import (
 	"encoding/xml"
-	"io/ioutil"
+	"os"
 	"strings"
 	"testing"
 )
@@ -149,7 +149,7 @@ func parseDoc(t *testing.T, document []byte) *Element {
 }
 
 func parseFile(t *testing.T, filename string) *Element {
-	data, err := ioutil.ReadFile(filename)
+	data, err := os.ReadFile(filename)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -196,7 +196,7 @@ func TestNSResolution(t *testing.T) {
 	}
 
 	defaultns := root.SearchFunc(func(el *Element) bool {
-		if (el.Name != xml.Name{"http://schemas.xmlsoap.org/wsdl/", "binding"}) {
+		if (el.Name != xml.Name{Space: "http://schemas.xmlsoap.org/wsdl/", Local: "binding"}) {
 			return false
 		}
 		return el.Attr("", "name") == "wseDocReciboSoap12"

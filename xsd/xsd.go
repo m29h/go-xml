@@ -282,7 +282,7 @@ Loop:
 		case xml.EndElement:
 			break Loop
 		case xml.StartElement:
-			if (tok.Name != xml.Name{schemaNS, "documentation"}) {
+			if (tok.Name != xml.Name{Space: schemaNS, Local: "documentation"}) {
 				if err := d.Skip(); err != nil {
 					return err
 				}

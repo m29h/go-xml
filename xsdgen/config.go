@@ -11,6 +11,8 @@ import (
 
 	"aqwari.net/xml/internal/gen"
 	"aqwari.net/xml/xsd"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // A Config holds user-defined overrides and filters that are used when
@@ -483,7 +485,7 @@ func (cfg *Config) expr(t xsd.Type) (ast.Expr, error) {
 	if t, ok := t.(xsd.Builtin); ok {
 		ex := builtinExpr(t)
 		if ex == nil {
-			return nil, fmt.Errorf("Unknown built-in type %q", t.Name().Local)
+			return nil, fmt.Errorf("unknown built-in type %q", t.Name().Local)
 		}
 		return ex, nil
 	}
@@ -514,7 +516,7 @@ func (cfg *Config) public(name xml.Name) string {
 	if cfg.nameTransform != nil {
 		name = cfg.nameTransform(name)
 	}
-	return strings.Title(name.Local)
+	return cases.Title(language.Und, cases.NoLower).String(name.Local)
 }
 
 //
@@ -538,7 +540,7 @@ func (cfg *Config) public(name xml.Name) string {
 //
 // XML Schema is wonderful, aint it?
 func (cfg *Config) parseSOAPArrayType(s xsd.Schema, t xsd.Type) xsd.Type {
-	const soapenc = "http://schemas.xmlsoap.org/soap/encoding/"
+	//const soapenc = "http://schemas.xmlsoap.org/soap/encoding/"
 	const wsdl = "http://schemas.xmlsoap.org/wsdl/"
 	var itemType xml.Name
 
@@ -553,7 +555,7 @@ func (cfg *Config) parseSOAPArrayType(s xsd.Schema, t xsd.Type) xsd.Type {
 			continue
 		}
 		for _, a := range v.Attr {
-			if (a.Name != xml.Name{wsdl, "arrayType"}) {
+			if (a.Name != xml.Name{Space: wsdl, Local: "arrayType"}) {
 				continue
 			}
 			itemType = v.Resolve(a.Value)
@@ -808,7 +810,7 @@ func (cfg *Config) soapArrayToSlice(s spec) spec {
 	}
 	cfg.debugf("flattening single-element slice struct type %s to []%v", s.name, slice.Elt)
 	tag := gen.TagKey(str.Fields.List[0], "xml")
-	xmltag := xml.Name{"", ",any"}
+	xmltag := xml.Name{Space: "", Local: ",any"}
 
 	if tag != "" {
 		parts := strings.Split(tag, ",")
@@ -848,7 +850,7 @@ func (cfg *Config) soapArrayToSlice(s spec) spec {
 	} else {
 		unmarshalFn = unmarshalFn.Body(`
 			var tok xml.Token
-			var itemTag = xml.Name{%q, %q}
+			var itemTag = xml.Name{Space: %q, Local: %q}
 			
 			for tok, err = d.Token(); err == nil; tok, err = d.Token() {
 				if tok, ok := tok.(xml.StartElement); ok {
@@ -877,6 +879,7 @@ func (cfg *Config) soapArrayToSlice(s spec) spec {
 	if xmltag.Local == ",any" {
 		xmltag.Local = "item"
 	}
+	tagName := strings.TrimSpace(fmt.Sprintf("%s %s", xmltag.Space, xmltag.Local))
 	marshal, err := gen.Func("MarshalXML").
 		Receiver("a "+s.name).
 		Args("e *xml.Encoder", "start xml.StartElement").
@@ -884,16 +887,16 @@ func (cfg *Config) soapArrayToSlice(s spec) spec {
 		Body(`
 			var output struct {
 				ArrayType string `+"`xml:\"http://schemas.xmlsoap.org/wsdl/ arrayType,attr\"`"+`
-				Items []%[1]s `+"`xml:\"%[2]s %[3]s\"`"+`
+				Items []%[1]s `+"`xml:\"%[2]s\"`"+`
 			}
 			output.Items = []%[1]s(a)
 			start.Attr = append(start.Attr, xml.Attr {
-				Name: xml.Name{"", "xmlns:ns1"},
-				Value: %[4]q,
+				Name: xml.Name{Local: "xmlns:ns1"},
+				Value: %[3]q,
 			})
-			output.ArrayType = "ns1:%[5]s[]"
+			output.ArrayType = "ns1:%[4]s[]"
 			return e.EncodeElement(&output, start)
-		`, itemType, xmltag.Space, xmltag.Local, baseType.Space, baseType.Local).Decl()
+		`, itemType, tagName, baseType.Space, baseType.Local).Decl()
 	if err != nil {
 		cfg.logf("error generating MarshalXML method of %s: %v", s.name, err)
 		return s

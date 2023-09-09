@@ -4,7 +4,7 @@ package books
 
 import (
 	"encoding/xml"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -23,7 +23,7 @@ func TestBooks(t *testing.T) {
 	if len(samples) != 1 {
 		t.Fatal("expected one sample file, found ", samples)
 	}
-	input, err := ioutil.ReadFile(samples[0])
+	input, err := os.ReadFile(samples[0])
 	if err != nil {
 		t.Fatal(err)
 	}

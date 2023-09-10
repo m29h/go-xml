@@ -15,7 +15,7 @@ type BookForm struct {
 	Price   float32   `xml:"price"`
 	Pubdate time.Time `xml:"pub_date"`
 	Review  string    `xml:"review"`
-	Name    *string   `xml:"urn:books name,attr,omitempty"`
+	Name    string    `xml:"urn:books name,attr,omitempty"`
 }
 
 func (t *BookForm) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
@@ -40,7 +40,7 @@ func (t *BookForm) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 }
 
 type BooksForm struct {
-	Book []BookForm `xml:"book,omitempty"`
+	Book []*BookForm `xml:"book,omitempty"`
 }
 
 type xsdDate time.Time

@@ -742,7 +742,8 @@ func (cfg *Config) genComplexType(t *xsd.ComplexType) ([]spec, error) {
 		}
 
 		// optional elements should use pointers
-		if (el.Nillable || el.Optional) && el.Default == "" && !el.Plural {
+		_, complex := el.Type.(*xsd.ComplexType)
+		if (el.Nillable || el.Optional) && el.Default == "" && complex {
 			base = &ast.StarExpr{X: base}
 		}
 		name := namegen.element(el.Name)
@@ -806,10 +807,7 @@ func (cfg *Config) genComplexType(t *xsd.ComplexType) ([]spec, error) {
 		if err != nil {
 			return nil, fmt.Errorf("%s attribute %s: %v", t.Name.Local, attr.Name.Local, err)
 		}
-		// optional attributes should use pointers
-		if attr.Optional {
-			base = &ast.StarExpr{X: base}
-		}
+
 		cfg.debugf("adding %s attribute %s as %v", t.Name.Local, attr.Name.Local, base)
 		name := namegen.attribute(attr.Name)
 		fields = append(fields, name, base, gen.String(tag))

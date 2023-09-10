@@ -40,7 +40,7 @@ func (t *BookForm) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 }
 
 type BooksForm struct {
-	Book []*BookForm `xml:"book,omitempty"`
+	Book []BookForm `xml:"book,omitempty"`
 }
 
 type xsdDate time.Time

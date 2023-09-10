@@ -578,6 +578,7 @@ type fieldOverride struct {
 	DefaultValue     string
 	Type             xsd.Type
 	Tag              string
+	Pointer          string
 }
 
 type nameGenerator struct {
@@ -673,6 +674,7 @@ func (cfg *Config) genComplexType(t *xsd.ComplexType) ([]spec, error) {
 					Tag:       tag,
 					ToType:    h.name,
 					Type:      b,
+					Pointer:   "&",
 				})
 			}
 			fields = append(fields, namegen.unique(name), expr, gen.String(tag))
@@ -741,7 +743,7 @@ func (cfg *Config) genComplexType(t *xsd.ComplexType) ([]spec, error) {
 		}
 
 		// optional elements should use pointers
-		if (el.Nillable || el.Optional) && el.Default == "" {
+		if (el.Nillable || el.Optional) && el.Default == "" && !el.Plural {
 			base = &ast.StarExpr{X: base}
 		}
 		name := namegen.element(el.Name)
@@ -768,9 +770,14 @@ func (cfg *Config) genComplexType(t *xsd.ComplexType) ([]spec, error) {
 				if !ok {
 					return nil, fmt.Errorf("no helper type for type %v element %v", t.Name, el.Name)
 				}
-				helperTypes = append(helperTypes, xsd.XMLName(h.xsdType))
+				helperTypes = append(helperTypes, xsd.XMLName(el.Type))
 				typeName = h.name
 			}
+			pointer := "&"
+			if _, isPointer := base.(*ast.StarExpr); isPointer {
+				pointer = ""
+			}
+
 			overrides = append(overrides, fieldOverride{
 				DefaultValue: el.Default,
 				FieldName:    name.(*ast.Ident).Name,
@@ -778,6 +785,7 @@ func (cfg *Config) genComplexType(t *xsd.ComplexType) ([]spec, error) {
 				Tag:          tag,
 				ToType:       typeName,
 				Type:         el.Type,
+				Pointer:      pointer,
 			})
 		}
 	}
@@ -816,6 +824,10 @@ func (cfg *Config) genComplexType(t *xsd.ComplexType) ([]spec, error) {
 				typeName = h.name
 				helperTypes = append(helperTypes, xsd.XMLName(attr.Type))
 			}
+			pointer := "&"
+			if _, isPointer := base.(*ast.StarExpr); isPointer {
+				pointer = ""
+			}
 			overrides = append(overrides, fieldOverride{
 				DefaultValue: attr.Default,
 				FieldName:    name.(*ast.Ident).Name,
@@ -823,6 +835,7 @@ func (cfg *Config) genComplexType(t *xsd.ComplexType) ([]spec, error) {
 				Tag:          tag,
 				ToType:       typeName,
 				Type:         attr.Type,
+				Pointer:      pointer,
 			})
 		}
 	}
@@ -873,7 +886,7 @@ func (cfg *Config) genComplexTypeMethods(t *xsd.ComplexType, overrides []fieldOv
 			}
 			overlay.T = (*T)(t)
 			{{range .Overrides}}
-			overlay.{{.FieldName}} = (*{{.ToType}})(&overlay.T.{{.FieldName}})
+			overlay.{{.FieldName}} = (*{{.ToType}})({{.Pointer}}overlay.T.{{.FieldName}})
 			{{if .DefaultValue}}
 			if *overlay.{{.FieldName}} == "" {
 				*overlay.{{.FieldName}} = "{{.DefaultValue}}"
@@ -915,7 +928,7 @@ func (cfg *Config) genComplexTypeMethods(t *xsd.ComplexType, overrides []fieldOv
 			}
 			layout.T = (*T)(t)
 			{{- range .Overrides}}
-			layout.{{.FieldName}} = (*{{.ToType}})(&layout.T.{{.FieldName}})
+			layout.{{.FieldName}} = (*{{.ToType}})({{.Pointer}}layout.T.{{.FieldName}})
 			{{end -}}
 
 			return e.EncodeElement(layout, start)

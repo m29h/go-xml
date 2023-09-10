@@ -454,27 +454,26 @@ func (cfg *Config) flatten1(t xsd.Type, flattenedTypes map[xml.Name]xsd.Type, pu
 		if nonTrivialBuiltin(t.Base) {
 			return t
 		}
+
+		l := len(t.Doc)
 		if len(t.Restriction.Enum) > 0 {
-			t.Doc = "May be one of " + strings.Join(t.Restriction.Enum, ", ")
-			return t
+			t.Doc += "\nMay be one of " + strings.Join(t.Restriction.Enum, ", ")
 		}
 		if t.Restriction.Pattern != nil {
-			t.Doc = "Must match the pattern " + t.Restriction.Pattern.String()
-			return t
+			t.Doc += "\nMust match the pattern " + t.Restriction.Pattern.String()
 		}
 		if t.Restriction.MaxLength != 0 {
-			t.Doc = "May be no more than " + strconv.Itoa(t.Restriction.MaxLength) + " items long"
-			return t
+			t.Doc += "\nMay be no more than " + strconv.Itoa(t.Restriction.MaxLength) + " items long"
 		}
 		if t.Restriction.MinLength != 0 {
-			t.Doc = "Must be at least " + strconv.Itoa(t.Restriction.MinLength) + " items long"
-			return t
+			t.Doc += "\nMust be at least " + strconv.Itoa(t.Restriction.MinLength) + " items long"
 		}
 		if t.Restriction.Length != 0 {
-			t.Doc = "Must be exactly " + strconv.Itoa(t.Restriction.Length) + " items long"
+			t.Doc += "\nMust be exactly " + strconv.Itoa(t.Restriction.Length) + " items long"
+		}
+		if len(t.Doc) > l {
 			return t
 		}
-
 		flattenedTypes[xsd.XMLName(t)] = t.Base
 		return t.Base
 	case *xsd.ComplexType:

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/format"
+	"reflect"
 	"regexp"
 	"strings"
 
@@ -348,9 +349,14 @@ func UseFieldNames() Option {
 }
 
 func useFieldNames(s xsd.Schema, t xsd.Type) xsd.Type {
-	used := make(map[xml.Name]struct{})
-	for _, t := range s.Types {
-		used[xsd.XMLName(t)] = struct{}{}
+
+	used := func(search xml.Name) bool {
+		for _, t := range s.Types {
+			if xsd.XMLName(t) == search {
+				return true
+			}
+		}
+		return false
 	}
 	c, ok := t.(*xsd.ComplexType)
 	if !ok {
@@ -368,11 +374,22 @@ func useFieldNames(s xsd.Schema, t xsd.Type) xsd.Type {
 			if !base.Anonymous {
 				break
 			}
-			if _, inuse := used[el.Name]; inuse {
+			for i := 1; ; i++ {
+				name := el.Name
+				if i > 1 {
+					name.Local = fmt.Sprint(el.Name.Local, i)
+				}
+				if used(name) {
+					if other, ok := s.Types[el.Name].(*xsd.ComplexType); ok {
+						if !reflect.DeepEqual(other.Elements, base.Elements) {
+							continue
+						}
+					}
+				}
+				base.Name = name
+				base.Anonymous = false
 				break
 			}
-			base.Name = el.Name
-			base.Anonymous = false
 		}
 	}
 	for _, attr := range c.Attributes {

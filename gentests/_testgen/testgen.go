@@ -39,10 +39,12 @@ func main() {
 	}
 
 	cfg.Option(xsdgen.DefaultOptions...)
+
 	for _, testCase := range xsdTestCases {
 		code, tests, err := genXSDTests(*cfg, testCase.doc, testCase.pkg)
 		if err != nil {
 			errorsEncountered = true
+			log.Println(err)
 			log.Print(testCase.pkg)
 			continue
 		} else {
@@ -89,6 +91,7 @@ func writeTestFiles(code, tests *ast.File, pkg string) error {
 // Returns type definitions and unit tests as separate files.
 func genXSDTests(cfg xsdgen.Config, data []byte, pkg string) (code, tests *ast.File, err error) {
 	cfg.Option(xsdgen.PackageName(pkg))
+
 	main, err := cfg.GenCode(data)
 	if err != nil {
 		return nil, nil, err
@@ -112,15 +115,12 @@ func genXSDTests(cfg xsdgen.Config, data []byte, pkg string) (code, tests *ast.F
 	}
 	root := roots[0]
 	doc := topLevelElements(root)
-	fields := make([]ast.Expr, 0, len(doc)*3)
+	fields := make([]*gen.Field, 0, len(doc))
 
 	for _, elem := range doc {
-		fields = append(fields,
-			gen.Public(elem.Name.Local),
-			ast.NewIdent(main.NameOf(elem.Type)),
-			gen.String(fmt.Sprintf(`xml:"%s %s"`, elem.Name.Space, elem.Name.Local)))
+		fields = append(fields, &gen.Field{Name: gen.Public(elem.Name.Local), Type: ast.NewIdent(main.NameOf(elem.Type)), XmlName: elem.Name})
 	}
-	expr, err := gen.ToString(gen.Struct(fields...))
+	expr, err := gen.ToString(gen.Struct(fields, false))
 	if err != nil {
 		return nil, nil, err
 	}

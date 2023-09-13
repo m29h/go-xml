@@ -108,8 +108,8 @@ func ExampleIgnoreElements() {
 	// package ws
 	//
 	// type Person struct {
-	// 	Name     string `xml:"name"`
-	// 	Deceased bool   `xml:"deceased"`
+	// 	Name     string `xml:"http://www.example.com/ name"`
+	// 	Deceased bool   `xml:"http://www.example.com/ deceased"`
 	// }
 }
 
@@ -160,7 +160,7 @@ func ExampleReplace() {
 	//
 	// type StringArray struct {
 	// 	Items     []string `xml:",any"`
-	// 	ArrayType string   `xml:"arrayType,attr,omitempty"`
+	// 	ArrayType string   `xml:"http://schemas.xmlsoap.org/soap/encoding/ arrayType,attr,omitempty"`
 	// }
 }
 
@@ -190,8 +190,8 @@ func ExampleHandleSOAPArrayType() {
 	// type BoolArray struct {
 	// 	Items  []bool `xml:",any"`
 	// 	Offset string `xml:"http://schemas.xmlsoap.org/soap/encoding/ offset,attr,omitempty"`
-	// 	Id     string `xml:"id,attr,omitempty"`
-	// 	Href   string `xml:"href,attr,omitempty"`
+	// 	Id     string `xml:"http://schemas.xmlsoap.org/soap/encoding/ id,attr,omitempty"`
+	// 	Href   string `xml:"http://schemas.xmlsoap.org/soap/encoding/ href,attr,omitempty"`
 	// }
 }
 
@@ -290,16 +290,16 @@ func ExampleUseFieldNames() {
 	// )
 	//
 	// type Book struct {
-	// 	Title     string    `xml:"title"`
-	// 	Published time.Time `xml:"published"`
-	// 	Author    string    `xml:"author"`
+	// 	Title     string    `xml:"http://www.example.com/ title"`
+	// 	Published time.Time `xml:"http://www.example.com/ published"`
+	// 	Author    string    `xml:"http://www.example.com/ author"`
 	// }
 	//
 	// func (t *Book) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	//	type T Book
 	//	var layout struct {
 	//		*T
-	//		Published *xsdDate `xml:"published"`
+	//		Published *xsdDate `xml:"http://www.example.com/ published"`
 	//	}
 	//	layout.T = (*T)(t)
 	//	layout.Published = (*xsdDate)(&layout.T.Published)
@@ -309,7 +309,7 @@ func ExampleUseFieldNames() {
 	//	type T Book
 	//	var overlay struct {
 	//		*T
-	// 		Published *xsdDate `xml:"published"`
+	// 		Published *xsdDate `xml:"http://www.example.com/ published"`
 	// 	}
 	// 	overlay.T = (*T)(t)
 	// 	overlay.Published = (*xsdDate)(&overlay.T.Published)
@@ -317,7 +317,7 @@ func ExampleUseFieldNames() {
 	// }
 	//
 	// type Library struct {
-	// 	Book []Book `xml:"book"`
+	// 	Book []Book `xml:"http://www.example.com/ book"`
 	// }
 	//
 	// type xsdDate time.Time

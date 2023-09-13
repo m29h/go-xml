@@ -44,7 +44,8 @@ type Config struct {
 	filterTypes propertyFilter
 	// Transform for names
 	nameTransform func(xml.Name) xml.Name
-
+	// namespace attributes
+	attrPrefix map[string]string
 	// if populated, only types that are true in this map
 	// will be selected.
 	allowTypes map[xml.Name]bool
@@ -76,6 +77,7 @@ type Option func(*Config) Option
 // cases, and produce usable, idiomatic Go code. The top-level Generate
 // function of the xsdgen package uses these options.
 var DefaultOptions = []Option{
+	ApplyXMLNameToTopLevelElementTypes(true),
 	IgnoreAttributes("id", "href", "ref", "offset"),
 	Replace(`[._ \s-]`, ""),
 	PackageName("ws"),
@@ -826,6 +828,7 @@ func (cfg *Config) soapArrayToSlice(s spec) spec {
 		return s
 	}
 	cfg.debugf("flattening single-element slice struct type %s to []%v", s.name, slice.Elt)
+
 	tag := gen.TagKey(str.Fields.List[0], "xml")
 	xmltag := xml.Name{Space: "", Local: ",any"}
 

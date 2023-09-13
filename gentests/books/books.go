@@ -9,12 +9,12 @@ import (
 )
 
 type BookForm struct {
-	Author  string    `xml:"author"`
-	Title   string    `xml:"title"`
-	Genre   string    `xml:"genre"`
-	Price   float32   `xml:"price"`
-	Pubdate time.Time `xml:"pub_date"`
-	Review  string    `xml:"review"`
+	Author  string    `xml:"urn:books author"`
+	Title   string    `xml:"urn:books title"`
+	Genre   string    `xml:"urn:books genre"`
+	Price   float32   `xml:"urn:books price"`
+	Pubdate time.Time `xml:"urn:books pub_date"`
+	Review  string    `xml:"urn:books review"`
 	Name    string    `xml:"urn:books name,attr,omitempty"`
 }
 
@@ -22,7 +22,7 @@ func (t *BookForm) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	type T BookForm
 	var layout struct {
 		*T
-		Pubdate *xsdDate `xml:"pub_date"`
+		Pubdate *xsdDate `xml:"urn:books pub_date"`
 	}
 	layout.T = (*T)(t)
 	layout.Pubdate = (*xsdDate)(&layout.T.Pubdate)
@@ -32,7 +32,7 @@ func (t *BookForm) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	type T BookForm
 	var overlay struct {
 		*T
-		Pubdate *xsdDate `xml:"pub_date"`
+		Pubdate *xsdDate `xml:"urn:books pub_date"`
 	}
 	overlay.T = (*T)(t)
 	overlay.Pubdate = (*xsdDate)(&overlay.T.Pubdate)
@@ -40,7 +40,7 @@ func (t *BookForm) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 }
 
 type BooksForm struct {
-	Book []*BookForm `xml:"book,omitempty"`
+	Book []*BookForm `xml:"urn:books book,omitempty"`
 }
 
 type xsdDate time.Time

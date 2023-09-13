@@ -7,6 +7,7 @@ package gen // import "aqwari.net/xml/internal/gen"
 import (
 	"bufio"
 	"bytes"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"go/ast"
@@ -69,27 +70,48 @@ func ToString(expr ast.Expr) (string, error) {
 	return buf.String(), err
 }
 
+type Field struct {
+	Name      ast.Expr // field names; or nil
+	Type      ast.Expr // field type; or nil
+	Tag       ast.Expr // field tag; or nil
+	XmlName   xml.Name // the xml style name+space
+	TagOption string   // xml tag options
+}
+
 // Struct creates a struct{} expression. The arguments are a series
 // of name/type/tag tuples. Name must be of type *ast.Ident, type
 // must be of type ast.Expr, and tag must be of type *ast.BasicLit,
 // The number of arguments must be a multiple of 3, or a run-time
 // panic will occur.
-func Struct(args ...ast.Expr) *ast.StructType {
+func Struct(args []*Field, addJSONtags bool) *ast.StructType {
 	fields := new(ast.FieldList)
-	if len(args)%3 != 0 {
-		panic("Number of args to FieldList must be a multiple of 3, got " + strconv.Itoa(len(args)))
-	}
-	for i := 0; i < len(args); i += 3 {
+	for _, v := range args {
 		var field ast.Field
-		name, typ, tag := args[i], args[i+1], args[i+2]
-		if name != nil {
-			field.Names = []*ast.Ident{name.(*ast.Ident)}
+		start := v.XmlName
+		tag := ""
+		v.TagOption = strings.Trim(strings.Replace(v.TagOption, ",,", ",", -1), ",")
+		if v.TagOption != "" {
+			v.TagOption = "," + v.TagOption
 		}
-		if typ != nil {
-			field.Type = typ
+		if start.Space == "" {
+			tag = fmt.Sprintf(`xml:"%s%s"`, start.Local, v.TagOption)
+		} else {
+			tag = fmt.Sprintf(`xml:"%s %s%s"`, start.Space, start.Local, v.TagOption)
 		}
-		if tag != nil {
-			field.Tag = tag.(*ast.BasicLit)
+		if addJSONtags && v.XmlName.Space != "" {
+			tag = fmt.Sprintf(`json:"%s" %s`, v.XmlName.Local, tag)
+		}
+
+		v.Tag = String(tag)
+		field.Tag = String(tag)
+		if v.Name != nil {
+			field.Names = []*ast.Ident{v.Name.(*ast.Ident)}
+		}
+		if v.Type != nil {
+			field.Type = v.Type
+		}
+		if v.Tag != nil {
+			field.Tag = v.Tag.(*ast.BasicLit)
 		}
 		fields.List = append(fields.List, &field)
 	}

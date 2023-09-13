@@ -83,61 +83,61 @@ type Sector string
 type Unit string
 
 type WeatherParameters struct {
-	Maxt         bool `xml:"maxt"`
-	Mint         bool `xml:"mint"`
-	Temp         bool `xml:"temp"`
-	Dew          bool `xml:"dew"`
-	Pop12        bool `xml:"pop12"`
-	Qpf          bool `xml:"qpf"`
-	Sky          bool `xml:"sky"`
-	Snow         bool `xml:"snow"`
-	Wspd         bool `xml:"wspd"`
-	Wdir         bool `xml:"wdir"`
-	Wx           bool `xml:"wx"`
-	Waveh        bool `xml:"waveh"`
-	Icons        bool `xml:"icons"`
-	Rh           bool `xml:"rh"`
-	Appt         bool `xml:"appt"`
-	Incw34       bool `xml:"incw34"`
-	Incw50       bool `xml:"incw50"`
-	Incw64       bool `xml:"incw64"`
-	Cumw34       bool `xml:"cumw34"`
-	Cumw50       bool `xml:"cumw50"`
-	Cumw64       bool `xml:"cumw64"`
-	Critfireo    bool `xml:"critfireo"`
-	Dryfireo     bool `xml:"dryfireo"`
-	Conhazo      bool `xml:"conhazo"`
-	Ptornado     bool `xml:"ptornado"`
-	Phail        bool `xml:"phail"`
-	Ptstmwinds   bool `xml:"ptstmwinds"`
-	Pxtornado    bool `xml:"pxtornado"`
-	Pxhail       bool `xml:"pxhail"`
-	Pxtstmwinds  bool `xml:"pxtstmwinds"`
-	Ptotsvrtstm  bool `xml:"ptotsvrtstm"`
-	Pxtotsvrtstm bool `xml:"pxtotsvrtstm"`
-	Tmpabv14d    bool `xml:"tmpabv14d"`
-	Tmpblw14d    bool `xml:"tmpblw14d"`
-	Tmpabv30d    bool `xml:"tmpabv30d"`
-	Tmpblw30d    bool `xml:"tmpblw30d"`
-	Tmpabv90d    bool `xml:"tmpabv90d"`
-	Tmpblw90d    bool `xml:"tmpblw90d"`
-	Prcpabv14d   bool `xml:"prcpabv14d"`
-	Prcpblw14d   bool `xml:"prcpblw14d"`
-	Prcpabv30d   bool `xml:"prcpabv30d"`
-	Prcpblw30d   bool `xml:"prcpblw30d"`
-	Prcpabv90d   bool `xml:"prcpabv90d"`
-	Prcpblw90d   bool `xml:"prcpblw90d"`
-	Precipar     bool `xml:"precipa_r"`
-	Skyr         bool `xml:"sky_r"`
-	Tdr          bool `xml:"td_r"`
-	Tempr        bool `xml:"temp_r"`
-	Wdirr        bool `xml:"wdir_r"`
-	Wspdr        bool `xml:"wspd_r"`
-	Wwa          bool `xml:"wwa"`
-	Wgust        bool `xml:"wgust"`
-	Iceaccum     bool `xml:"iceaccum"`
-	Maxrh        bool `xml:"maxrh"`
-	Minrh        bool `xml:"minrh"`
+	Maxt         bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd maxt"`
+	Mint         bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd mint"`
+	Temp         bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd temp"`
+	Dew          bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd dew"`
+	Pop12        bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd pop12"`
+	Qpf          bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd qpf"`
+	Sky          bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd sky"`
+	Snow         bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd snow"`
+	Wspd         bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd wspd"`
+	Wdir         bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd wdir"`
+	Wx           bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd wx"`
+	Waveh        bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd waveh"`
+	Icons        bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd icons"`
+	Rh           bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd rh"`
+	Appt         bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd appt"`
+	Incw34       bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd incw34"`
+	Incw50       bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd incw50"`
+	Incw64       bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd incw64"`
+	Cumw34       bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd cumw34"`
+	Cumw50       bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd cumw50"`
+	Cumw64       bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd cumw64"`
+	Critfireo    bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd critfireo"`
+	Dryfireo     bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd dryfireo"`
+	Conhazo      bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd conhazo"`
+	Ptornado     bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd ptornado"`
+	Phail        bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd phail"`
+	Ptstmwinds   bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd ptstmwinds"`
+	Pxtornado    bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd pxtornado"`
+	Pxhail       bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd pxhail"`
+	Pxtstmwinds  bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd pxtstmwinds"`
+	Ptotsvrtstm  bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd ptotsvrtstm"`
+	Pxtotsvrtstm bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd pxtotsvrtstm"`
+	Tmpabv14d    bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd tmpabv14d"`
+	Tmpblw14d    bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd tmpblw14d"`
+	Tmpabv30d    bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd tmpabv30d"`
+	Tmpblw30d    bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd tmpblw30d"`
+	Tmpabv90d    bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd tmpabv90d"`
+	Tmpblw90d    bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd tmpblw90d"`
+	Prcpabv14d   bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd prcpabv14d"`
+	Prcpblw14d   bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd prcpblw14d"`
+	Prcpabv30d   bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd prcpabv30d"`
+	Prcpblw30d   bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd prcpblw30d"`
+	Prcpabv90d   bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd prcpabv90d"`
+	Prcpblw90d   bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd prcpblw90d"`
+	Precipar     bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd precipa_r"`
+	Skyr         bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd sky_r"`
+	Tdr          bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd td_r"`
+	Tempr        bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd temp_r"`
+	Wdirr        bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd wdir_r"`
+	Wspdr        bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd wspd_r"`
+	Wwa          bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd wwa"`
+	Wgust        bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd wgust"`
+	Iceaccum     bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd iceaccum"`
+	Maxrh        bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd maxrh"`
+	Minrh        bool `xml:"http://graphical.weather.gov/xml/DWMLgen/schema/DWML.xsd minrh"`
 }
 
 // Must match the pattern \d{5}(\-\d{4})?

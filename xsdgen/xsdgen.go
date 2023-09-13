@@ -572,12 +572,13 @@ func (cfg *Config) genTypeSpec(t xsd.Type) (result []spec, err error) {
 }
 
 type fieldOverride struct {
-	FieldName        string
+	BaseField        *gen.Field
 	FromType, ToType string
 	DefaultValue     string
 	Type             xsd.Type
-	Tag              string
 	Pointer          string
+	Name             string
+	Tag              string
 }
 
 type nameGenerator struct {
@@ -621,7 +622,7 @@ func (gen *nameGenerator) element(base xml.Name) ast.Expr {
 
 func (cfg *Config) genComplexType(t *xsd.ComplexType) ([]spec, error) {
 	var result []spec
-	var fields []ast.Expr
+	var fields []*gen.Field
 	var overrides []fieldOverride
 	var helperTypes []xml.Name
 
@@ -640,14 +641,13 @@ func (cfg *Config) genComplexType(t *xsd.ComplexType) ([]spec, error) {
 		}
 		expr, err := cfg.expr(base)
 		if err != nil {
-			return nil, fmt.Errorf("%s base type %s: %v",
-				t.Name.Local, xsd.XMLName(t.Base).Local, err)
+			return nil, fmt.Errorf("%s base type %s: %v", t.Name.Local, xsd.XMLName(t.Base).Local, err)
 		}
 		switch b := base.(type) {
 		case *xsd.SimpleType:
 			cfg.debugf("complexType %[1]s extends simpleType %[2]s. Naming"+
 				" the chardata struct field after %[2]s", t.Name.Local, b.Name.Local)
-			fields = append(fields, expr, expr, gen.String(`xml:",chardata"`))
+			fields = append(fields, &gen.Field{Name: expr, Type: expr, TagOption: "chardata"})
 		case xsd.Builtin:
 			if b == xsd.AnyType {
 				// extending anyType doesn't really make sense, but
@@ -660,7 +660,7 @@ func (cfg *Config) genComplexType(t *xsd.ComplexType) ([]spec, error) {
 			cfg.debugf("complexType %[1]s extends %[2]s, naming chardata struct field %[2]s",
 				t.Name.Local, b)
 			name := "Value"
-			tag := `xml:",chardata"`
+			f := &gen.Field{Name: namegen.unique(name), Type: expr, TagOption: "chardata"}
 			if nonTrivialBuiltin(b) {
 				h, ok := cfg.helperTypes[xsd.XMLName(b)]
 				if !ok {
@@ -668,15 +668,14 @@ func (cfg *Config) genComplexType(t *xsd.ComplexType) ([]spec, error) {
 				}
 				helperTypes = append(helperTypes, xsd.XMLName(h.xsdType))
 				overrides = append(overrides, fieldOverride{
-					FieldName: name,
+					BaseField: f,
 					FromType:  cfg.exprString(b),
-					Tag:       tag,
 					ToType:    h.name,
 					Type:      b,
 					Pointer:   "&",
 				})
 			}
-			fields = append(fields, namegen.unique(name), expr, gen.String(tag))
+			fields = append(fields, f)
 		default:
 			panic(fmt.Errorf("%s does not derive from a builtin type", t.Name.Local))
 		}
@@ -711,29 +710,13 @@ func (cfg *Config) genComplexType(t *xsd.ComplexType) ([]spec, error) {
 		xsd.XMLName(t).Local, len(elements), len(attributes))
 
 	if t.TopLevel && cfg.applyXMLNameToTopLevelElementTypes {
-		tag := ""
-		if t.Name.Space == "" {
-			tag = fmt.Sprintf(`xml:"%s"`, t.Name.Local)
-		} else {
-			tag = fmt.Sprintf(`xml:"%s %s"`, t.Name.Space, t.Name.Local)
-		}
-		fields = append(fields, ast.NewIdent("XMLName"), ast.NewIdent("xml.Name"), gen.String(tag))
+		fields = append(fields, &gen.Field{Name: ast.NewIdent("XMLName"), Type: ast.NewIdent("xml.Name"), XmlName: t.Name, TagOption: ""})
 	}
 
 	for _, el := range elements {
 		options := ""
 		if el.Nillable || el.Optional {
 			options = ",omitempty"
-		}
-
-		tag := ""
-		if el.Form == xsd.FormOptionQualified || t.Name.Space != el.Name.Space {
-			tag = fmt.Sprintf(`xml:"%s %s%s"`, el.Name.Space, el.Name.Local, options)
-		} else {
-			tag = fmt.Sprintf(`xml:"%s%s"`, el.Name.Local, options)
-		}
-		if cfg.addJSONTags {
-			tag = fmt.Sprintf(`json:"%s%s" %s`, el.Name.Local, options, tag)
 		}
 
 		base, err := cfg.expr(el.Type)
@@ -748,7 +731,7 @@ func (cfg *Config) genComplexType(t *xsd.ComplexType) ([]spec, error) {
 		}
 		name := namegen.element(el.Name)
 		if el.Wildcard {
-			tag = `xml:",any"`
+			options += ",any"
 			if el.Plural {
 				name = ast.NewIdent("Items")
 			} else {
@@ -762,7 +745,8 @@ func (cfg *Config) genComplexType(t *xsd.ComplexType) ([]spec, error) {
 		if el.Plural {
 			base = &ast.ArrayType{Elt: base}
 		}
-		fields = append(fields, name, base, gen.String(tag))
+		f := &gen.Field{Name: name, Type: base, XmlName: el.Name, TagOption: options}
+		fields = append(fields, f)
 		if el.Default != "" || nonTrivialBuiltin(el.Type) {
 			typeName := cfg.exprString(el.Type)
 			if nonTrivialBuiltin(el.Type) {
@@ -779,10 +763,9 @@ func (cfg *Config) genComplexType(t *xsd.ComplexType) ([]spec, error) {
 			}
 
 			overrides = append(overrides, fieldOverride{
+				BaseField:    f,
 				DefaultValue: el.Default,
-				FieldName:    name.(*ast.Ident).Name,
 				FromType:     cfg.exprString(el.Type),
-				Tag:          tag,
 				ToType:       typeName,
 				Type:         el.Type,
 				Pointer:      pointer,
@@ -790,18 +773,9 @@ func (cfg *Config) genComplexType(t *xsd.ComplexType) ([]spec, error) {
 		}
 	}
 	for _, attr := range attributes {
-		options := ""
+		options := "attr"
 		if attr.Optional {
-			options = ",omitempty"
-		}
-		var tag string
-		if attr.Form == xsd.FormOptionQualified {
-			tag = fmt.Sprintf(`xml:"%s %s,attr%s"`, attr.Name.Space, attr.Name.Local, options)
-		} else {
-			tag = fmt.Sprintf(`xml:"%s,attr%s"`, attr.Name.Local, options)
-		}
-		if cfg.addJSONTags {
-			tag = fmt.Sprintf(`json:"%s%s" %s`, attr.Name.Local, options, tag)
+			options += ",omitempty"
 		}
 		base, err := cfg.expr(attr.Type)
 		if err != nil {
@@ -810,7 +784,8 @@ func (cfg *Config) genComplexType(t *xsd.ComplexType) ([]spec, error) {
 
 		cfg.debugf("adding %s attribute %s as %v", t.Name.Local, attr.Name.Local, base)
 		name := namegen.attribute(attr.Name)
-		fields = append(fields, name, base, gen.String(tag))
+		f := &gen.Field{Name: name, Type: base, XmlName: attr.Name, TagOption: options}
+		fields = append(fields, f)
 		if attr.Default != "" || nonTrivialBuiltin(attr.Type) {
 			typeName := cfg.exprString(attr.Type)
 			if nonTrivialBuiltin(attr.Type) {
@@ -826,17 +801,16 @@ func (cfg *Config) genComplexType(t *xsd.ComplexType) ([]spec, error) {
 				pointer = ""
 			}
 			overrides = append(overrides, fieldOverride{
+				BaseField:    f,
 				DefaultValue: attr.Default,
-				FieldName:    name.(*ast.Ident).Name,
 				FromType:     cfg.exprString(attr.Type),
-				Tag:          tag,
 				ToType:       typeName,
 				Type:         attr.Type,
 				Pointer:      pointer,
 			})
 		}
 	}
-	expr := gen.Struct(fields...)
+	expr := gen.Struct(fields, cfg.addJSONTags)
 	s := spec{
 		doc:         t.Doc,
 		name:        cfg.public(t.Name),
@@ -844,6 +818,7 @@ func (cfg *Config) genComplexType(t *xsd.ComplexType) ([]spec, error) {
 		xsdType:     t,
 		helperTypes: helperTypes,
 	}
+
 	if len(overrides) > 0 {
 		unmarshal, marshal, err := cfg.genComplexTypeMethods(t, overrides)
 		if err != nil {
@@ -865,10 +840,25 @@ func (cfg *Config) genComplexTypeMethods(t *xsd.ComplexType, overrides []fieldOv
 	var data struct {
 		Overrides []fieldOverride
 		Type      string
+		//		Name       xml.Name
+		XMLNameTag string
 	}
 	data.Overrides = overrides
+	for i, o := range data.Overrides {
+		data.Overrides[i].Tag = o.BaseField.Tag.(*ast.BasicLit).Value
+		data.Overrides[i].Name = o.BaseField.Name.(*ast.Ident).Name
+	}
 	data.Type = cfg.public(t.Name)
+	/*
+		data.Name = t.Name
+		start.Name.Space = "{{.Name.Space}}"
+		start.Name.Local = "{{.Name.Local}}"
+		XMLName xml.Name {{.XMLNameTag}}
+	*/
 
+	data.XMLNameTag = fmt.Sprintf("`xml:\"%s %s\"`", t.Name.Space, t.Name.Local)
+
+	///TODO TODO re-add the Tag element to Overrides
 	unmarshal, err = gen.Func("UnmarshalXML").
 		Receiver("t *"+data.Type).
 		Args("d *xml.Decoder", "start xml.StartElement").
@@ -878,15 +868,15 @@ func (cfg *Config) genComplexTypeMethods(t *xsd.ComplexType, overrides []fieldOv
 			var overlay struct{
 				*T
 				{{range .Overrides}}
-				{{.FieldName}} *{{.ToType}} `+"`{{.Tag}}`"+`
+				{{.Name}} *{{.ToType}} {{.Tag}}
 				{{end}}
 			}
 			overlay.T = (*T)(t)
 			{{range .Overrides}}
-			overlay.{{.FieldName}} = (*{{.ToType}})({{.Pointer}}overlay.T.{{.FieldName}})
+			overlay.{{.Name}} = (*{{.ToType}})({{.Pointer}}overlay.T.{{.Name}})
 			{{if .DefaultValue}}
-			if *overlay.{{.FieldName}} == "" {
-				*overlay.{{.FieldName}} = "{{.DefaultValue}}"
+			if *overlay.{{.Name}} == "" {
+				*overlay.{{.Name}} = "{{.DefaultValue}}"
 			}
 			{{end}}
 			{{end}}
@@ -920,16 +910,19 @@ func (cfg *Config) genComplexTypeMethods(t *xsd.ComplexType, overrides []fieldOv
 			var layout struct{
 				*T
 				{{- range .Overrides}}
-				{{.FieldName}} *{{.ToType}}`+"`{{.Tag}}`"+`
+				{{.Name}} *{{.ToType}} {{.Tag}}
 				{{end -}}
 			}
 			layout.T = (*T)(t)
 			{{- range .Overrides}}
-			layout.{{.FieldName}} = (*{{.ToType}})({{.Pointer}}layout.T.{{.FieldName}})
+			layout.{{.Name}} = (*{{.ToType}})({{.Pointer}}layout.T.{{.Name}})
 			{{end -}}
 
 			return e.EncodeElement(layout, start)
 		`, data).Decl()
+	if err != nil {
+		return nil, nil, err
+	}
 	return marshal, unmarshal, err
 }
 

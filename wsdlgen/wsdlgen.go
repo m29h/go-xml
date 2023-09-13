@@ -98,6 +98,7 @@ func (cfg *Config) GenAST(files ...string) (*ast.File, error) {
 	if cfg.pkgHeader == "" {
 		cfg.pkgHeader = fmt.Sprintf("Package %s", cfg.pkgName)
 	}
+
 	docs := make([][]byte, 0, len(files))
 	for _, filename := range files {
 		if data, err := os.ReadFile(filename); err != nil {
@@ -115,6 +116,7 @@ func (cfg *Config) GenAST(files ...string) (*ast.File, error) {
 	}
 
 	cfg.verbosef("generating type declarations from xml schema")
+
 	code, err := cfg.xsdgen.GenCode(docs...)
 	if err != nil {
 		return nil, err

@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"aqwari.net/xml/internal/commandline"
-	"aqwari.net/xml/internal/gen"
-	"aqwari.net/xml/xsd"
+	"github.com/m29h/go-xml/internal/commandline"
+	"github.com/m29h/go-xml/internal/gen"
+	"github.com/m29h/go-xml/xsd"
 )
 
 // ParseSchemas reads all xml schema definitions from the provided

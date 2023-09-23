@@ -12,8 +12,8 @@ import (
 	"strconv"
 	"strings"
 
-	"aqwari.net/xml/internal/gen"
-	"aqwari.net/xml/xsd"
+	"github.com/m29h/go-xml/internal/gen"
+	"github.com/m29h/go-xml/xsd"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )

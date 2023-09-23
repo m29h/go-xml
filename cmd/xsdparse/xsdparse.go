@@ -1,4 +1,4 @@
-package main // import "aqwari.net/xml/cmd/xsdparse"
+package main
 
 import (
 	"flag"
@@ -6,8 +6,8 @@ import (
 	"log"
 	"os"
 
-	"aqwari.net/xml/xmltree"
-	"aqwari.net/xml/xsd"
+	"github.com/m29h/go-xml/xmltree"
+	"github.com/m29h/go-xml/xsd"
 )
 
 var (

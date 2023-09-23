@@ -1,4 +1,4 @@
-module aqwari.net/xml
+module github.com/m29h/go-xml
 
 go 1.21.1
 

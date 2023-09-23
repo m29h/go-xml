@@ -1,4 +1,4 @@
-package xsdgen // import "aqwari.net/xml/xsdgen"
+package xsdgen
 
 import (
 	"bytes"
@@ -11,10 +11,10 @@ import (
 	"strconv"
 	"strings"
 
-	"aqwari.net/xml/internal/dependency"
-	"aqwari.net/xml/internal/gen"
-	"aqwari.net/xml/xmltree"
-	"aqwari.net/xml/xsd"
+	"github.com/m29h/go-xml/internal/dependency"
+	"github.com/m29h/go-xml/internal/gen"
+	"github.com/m29h/go-xml/xmltree"
+	"github.com/m29h/go-xml/xsd"
 )
 
 type orderedStringMap interface {

@@ -7,7 +7,7 @@
 //
 // Code generation for the wsdlgen package can be configured by using
 // the provided Option functions.
-package wsdlgen // import "aqwari.net/xml/wsdlgen"
+package wsdlgen
 
 import (
 	"encoding/xml"
@@ -16,10 +16,10 @@ import (
 	"go/ast"
 	"os"
 
-	"aqwari.net/xml/internal/gen"
-	"aqwari.net/xml/wsdl"
-	"aqwari.net/xml/xsd"
-	"aqwari.net/xml/xsdgen"
+	"github.com/m29h/go-xml/internal/gen"
+	"github.com/m29h/go-xml/wsdl"
+	"github.com/m29h/go-xml/xsd"
+	"github.com/m29h/go-xml/xsdgen"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )

@@ -10,10 +10,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"aqwari.net/xml/internal/gen"
-	"aqwari.net/xml/xmltree"
-	"aqwari.net/xml/xsd"
-	"aqwari.net/xml/xsdgen"
+	"github.com/m29h/go-xml/internal/gen"
+	"github.com/m29h/go-xml/xmltree"
+	"github.com/m29h/go-xml/xsd"
+	"github.com/m29h/go-xml/xsdgen"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )

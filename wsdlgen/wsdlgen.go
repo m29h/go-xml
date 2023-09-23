@@ -32,9 +32,12 @@ type Logger interface {
 
 type printer struct {
 	*Config
-	code *xsdgen.Code
-	wsdl *wsdl.Definition
-	file *ast.File
+	code       *xsdgen.Code
+	wsdl       *wsdl.Definition
+	file       *ast.File
+	decl       []ast.Decl
+	schemas    []xsd.Schema
+	wsdlschema xsd.Schema
 }
 
 // Provides aspects about an RPC call to the template for the function
@@ -50,6 +53,10 @@ type opArgs struct {
 	Method string
 
 	SOAPAction string
+
+	// true for "document" style, false for "rpc" encoding
+	// https://schemas.xmlsoap.org/wsdl/soap/#tStyleChoice
+	DocumentStyle bool
 
 	// Name of the method to call
 	MsgName xml.Name
@@ -115,41 +122,162 @@ func (cfg *Config) GenAST(files ...string) (*ast.File, error) {
 		return nil, err
 	}
 
+	cfg.verbosef("generating function definitions from WSDL")
+	return cfg.genAST(def, docs)
+}
+
+func (cfg *Config) genAST(def *wsdl.Definition, docs [][]byte) (*ast.File, error) {
 	cfg.verbosef("generating type declarations from xml schema")
 
-	code, err := cfg.xsdgen.GenCode(docs...)
+	schemas, err := cfg.xsdgen.ParseSchemas(docs...)
 	if err != nil {
 		return nil, err
 	}
 
-	cfg.verbosef("generating function definitions from WSDL")
-	return cfg.genAST(def, code)
-}
-
-func (cfg *Config) genAST(def *wsdl.Definition, code *xsdgen.Code) (*ast.File, error) {
-	file, err := code.GenAST()
-	if err != nil {
-		return nil, err
-	}
-	file.Name = ast.NewIdent(cfg.pkgName)
-	file = gen.PackageDoc(file, cfg.pkgHeader, "\n", def.Doc)
 	p := &printer{
-		Config: cfg,
-		wsdl:   def,
-		file:   file,
-		code:   code,
+		Config:  cfg,
+		wsdl:    def,
+		decl:    nil,
+		schemas: schemas,
+		wsdlschema: xsd.Schema{
+			TargetNS: def.TargetNS,
+			Types:    make(map[xml.Name]xsd.Type),
+		},
 	}
-	return p.genAST()
+	//convert all RPC style arguments to xsd struct for document style use
+	//this also applies all the overlays for handling non-trival basic types (e.g. xsd:date)
+	p.genASTpre()
+	{
+		code, err := cfg.xsdgen.GenCodeWithSchema(&p.wsdlschema, docs...)
+		if err != nil {
+			return nil, err
+		}
+		file, err := code.GenAST()
+		if err != nil {
+			return nil, err
+		}
+		file.Name = ast.NewIdent(cfg.pkgName)
+		file = gen.PackageDoc(file, cfg.pkgHeader, "\n", def.Doc)
+
+		p.file = file
+		p.code = code
+	}
+
+	p.genAST()
+
+	p.file.Decls = append(p.file.Decls, p.decl...)
+	//prepend import statement
+
+	return p.file, nil
 }
 
-func (p *printer) genAST() (*ast.File, error) {
+func (p *printer) genASTpre() error {
+	for i := range p.wsdl.Ports {
+		if err := p.portPre(&p.wsdl.Ports[i]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Preprocessor identifying structs that should be generated for rpc
+// style operations
+func (p *printer) portPre(port *wsdl.Port) error {
+	for i := range port.Operations {
+		if err := p.operationPre(&(port.Operations[i])); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (p *printer) operationPre(op *wsdl.Operation) error {
+	input, ok := p.wsdl.Message[op.Input]
+	if !ok {
+		return fmt.Errorf("unknown input message type %s", op.Input.Local)
+	}
+	output, ok := p.wsdl.Message[op.Output]
+	if !ok {
+		return fmt.Errorf("unknown output message type %s", op.Output.Local)
+	}
+	if !op.DocumentStyle {
+		p.wsdl.Message[op.Input] = p.messageToComplexType(input)
+		p.wsdl.Message[op.Output] = p.messageToComplexType(output)
+		op.DocumentStyle = true
+	}
+
+	return nil
+}
+
+// convert wsdl message that is rpc style to complex type that inserts
+// into the soap body in document style
+func (p *printer) messageToComplexType(msg wsdl.Message) wsdl.Message {
+
+	elements := []xsd.Element{}
+	for _, pt := range msg.Parts {
+		var foundType xsd.Type
+
+		if bt, err := xsd.ParseBuiltin(pt.Type); err == nil {
+			foundType = bt
+		}
+		if bt, err := xsd.ParseBuiltin(pt.Element); err == nil {
+			foundType = bt
+		}
+		if bt, err := xsd.ParseBuiltin(xml.Name{Space: "http://www.w3.org/2001/XMLSchema", Local: pt.Element.Local}); err == nil {
+			foundType = bt
+		}
+		for _, s := range p.schemas {
+			if t := s.FindType(pt.Type); t != nil {
+				foundType = t
+			}
+			if t := s.FindType(pt.Element); t != nil {
+				foundType = t
+			}
+			if s.TargetNS == pt.Element.Space {
+				for k, v := range s.Types {
+					if k == pt.Element {
+						foundType = v
+					}
+				}
+			}
+		}
+
+		if foundType == nil {
+			panic("wsdl parse error unimplemented wsdl type while parsing wsdl message " + msg.Name.Local + " " + pt.Element.Space + "#" + pt.Element.Local)
+		}
+
+		elements = append(elements, xsd.Element{
+			Name: xml.Name{Space: msg.Name.Space, Local: pt.Name},
+			Type: foundType,
+		})
+	}
+	// build a complex type holding the message
+	t := &xsd.ComplexType{
+		Doc:        "",
+		Name:       msg.Name,
+		Base:       xsd.AnyType,
+		TopLevel:   true,
+		Elements:   elements,
+		Attributes: []xsd.Attribute{},
+	}
+	// point the message to a single part which is the newly created complex type
+	msg.Parts = []wsdl.Part{{
+		Name:    msg.Name.Local,
+		Type:    msg.Name,
+		Element: msg.Name,
+	}}
+	p.wsdlschema.Types[t.Name] = t
+	return msg
+}
+
+func (p *printer) genAST() error {
 	p.addHelpers()
 	for _, port := range p.wsdl.Ports {
 		if err := p.port(port); err != nil {
-			return nil, err
+			return err
 		}
 	}
-	return p.file, nil
+	return nil
 }
 
 func (p *printer) port(port wsdl.Port) error {
@@ -170,6 +298,7 @@ func (p *printer) operation(port wsdl.Port, op wsdl.Operation) error {
 	if !ok {
 		return fmt.Errorf("unknown output message type %s", op.Output.Local)
 	}
+
 	params, err := p.opArgs(port.Address, port.Method, op, input, output)
 	if err != nil {
 		return err
@@ -177,29 +306,29 @@ func (p *printer) operation(port wsdl.Port, op wsdl.Operation) error {
 
 	if params.InputType != "" {
 		decls, err := gen.Snippets(params, `
-			type {{.InputType}} struct {
-			{{ range .InputFields -}}
-				{{.Name}} {{.PublicType}}
-			{{ end -}}
-			}`,
+				type {{.InputType}} struct {
+				{{ range .InputFields -}}
+					{{.Name}} {{.PublicType}}
+				{{ end -}}
+				}`,
 		)
 		if err != nil {
 			return err
 		}
-		p.file.Decls = append(p.file.Decls, decls...)
+		p.decl = append(p.decl, decls...)
 	}
 	if params.ReturnType != "" {
 		decls, err := gen.Snippets(params, `
-			type {{.ReturnType}} struct {
-			{{ range .ReturnFields -}}
-				{{.Name}} {{.Type}}
-			{{ end -}}
-			}`,
+				type {{.ReturnType}} struct {
+				{{ range .ReturnFields -}}
+					{{.Name}} {{.Type}}
+				{{ end -}}
+				}`,
 		)
 		if err != nil {
 			return err
 		}
-		p.file.Decls = append(p.file.Decls, decls...)
+		p.decl = append(p.decl, decls...)
 	}
 	args := append([]string{"ctx context.Context"}, params.input...)
 	fn := gen.Func(p.xsdgen.NameOf(op.Name)).
@@ -207,38 +336,43 @@ func (p *printer) operation(port wsdl.Port, op wsdl.Operation) error {
 		Receiver("c *Client").
 		Args(args...).
 		BodyTmpl(`
-			var input struct {
-				XMLName struct{} `+"`"+`xml:"{{.MsgName.Space}} {{.MsgName.Local}}"`+"`"+`
-				Args struct {
-					{{ range .InputFields -}}
-					{{.Name}} {{.Type}} `+"`"+`xml:"{{.XMLName.Space}} {{.XMLName.Local}}"`+"`"+`
-					{{ end -}}
-				}`+"`xml:\"{{.InputName.Space}} {{.InputName.Local}}\"`"+`
-			}
-			
+		{{ if .DocumentStyle -}}
+			parameters :=[]any{
 			{{- range .InputFields }}
-			input.Args.{{.Name}} = {{.Type}}({{.InputArg}})
+			 &{{.InputArg}},
 			{{ end }}
+		    }
+		{{ else -}}
+		parameters := struct {
+			XMLName struct{} `+"`xml:\"{{.InputName.Space}} {{.InputName.Local}}\"`"+`
+			{{ range .InputFields -}}
+			{{.Name}} {{.Type}} `+"`"+`xml:"{{.XMLName.Space}} {{.XMLName.Local}}"`+"`"+`
+			{{ end -}}
+		}{ {{- range .InputFields }} {{.Name}} : {{.InputArg}},	{{ end }} }
+		{{ end -}}
+
+		{{ if .OutputFields -}}
+		output := struct{
+			XMLName struct{} `+"`xml:\"{{.OutputName.Space}} {{.OutputName.Local}}\"`"+`
+			{{ range .OutputFields -}}
+			{{.Name}} {{.Type}} `+"`"+`xml:"{{.XMLName.Space}} {{.XMLName.Local}}"`+"`"+`
+			{{ end -}}
+		}{}
+		{{ end -}}
+		response := []any{
+			{{ if .DocumentStyle -}}
+			{{ range .OutputFields }} 
+			&output.{{.Name}} ,
+			{{ end }}
+			{{ else if .OutputFields -}}
+			&output ,
+			{{ end -}}
+		}
 			
-			var output struct {
-				XMLName struct{} `+"`"+`xml:"{{.MsgName.Space}} {{.MsgName.Local}}"`+"`"+`
-				Args struct {
-					{{ range .OutputFields -}}
-					{{.Name}} {{.Type}} `+"`"+`xml:"{{.XMLName.Space}} {{.XMLName.Local}}"`+"`"+`
-					{{ end -}}
-				}`+"`xml:\"{{.OutputName.Space}} {{.OutputName.Local}}\"`"+`
-			}
-			
-			err := c.do(ctx, {{.Method|printf "%q"}}, {{.Address|printf "%q"}}, {{.SOAPAction|printf "%q"}}, &input, &output)
+			err := c.SOAP.Do(ctx, {{.SOAPAction|printf "%q"}}, &parameters, response)
 			
 			{{ if .OutputFields -}}
-			return {{ range .OutputFields }}{{.Type}}(output.Args.{{.Name}}), {{ end }} err
-			{{- else if .ReturnType -}}
-			var result {{ .ReturnType }}
-			{{ range .ReturnFields -}}
-			result.{{.Name}} = {{.Type}}(output.Args.{{.InputArg}})
-			{{ end -}}
-			return result, err
+			return {{ range $index , $element := .OutputFields }} output.{{$element.Name}} , {{ end }} err
 			{{- else -}}
 			return err
 			{{- end -}}
@@ -247,7 +381,7 @@ func (p *printer) operation(port wsdl.Port, op wsdl.Operation) error {
 	if decl, err := fn.Decl(); err != nil {
 		return err
 	} else {
-		p.file.Decls = append(p.file.Decls, decl)
+		p.decl = append(p.decl, decl)
 	}
 	return nil
 }
@@ -292,8 +426,9 @@ func (p *printer) opArgs(addr, method string, op wsdl.Operation, input, output w
 	args.Address = addr
 	args.Method = method
 	args.SOAPAction = op.SOAPAction
+	args.DocumentStyle = op.DocumentStyle
 	args.MsgName = op.Name
-	args.InputName = input.Name
+	args.InputName = xml.Name{Local: input.Name.Local, Space: input.Name.Space}
 	for _, part := range input.Parts {
 		typ, err := p.getPartType(part)
 		if err != nil {
@@ -315,12 +450,12 @@ func (p *printer) opArgs(addr, method string, op wsdl.Operation, input, output w
 	}
 	if len(args.input) > p.maxArgs {
 		args.InputType = cases.Title(language.Und, cases.NoLower).String(args.InputName.Local)
-		args.input = []string{"v " + args.InputName.Local}
+		args.input = []string{"v " + args.InputType}
 		for i, v := range input.Parts {
 			args.InputFields[i].InputArg = "v." + cases.Title(language.Und, cases.NoLower).String(v.Name)
 		}
 	}
-	args.OutputName = output.Name
+	args.OutputName = xml.Name{Local: output.Name.Local, Space: output.Name.Space}
 	for _, part := range output.Parts {
 		typ, err := p.getPartType(part)
 		if err != nil {
@@ -336,6 +471,7 @@ func (p *printer) opArgs(addr, method string, op wsdl.Operation, input, output w
 	}
 	if len(args.output) > p.maxReturns {
 		args.ReturnType = cases.Title(language.Und, cases.NoLower).String(args.OutputName.Local)
+		args.output = []string{args.ReturnType}
 		args.ReturnFields = make([]field, len(args.OutputFields))
 		for i, v := range args.OutputFields {
 			args.ReturnFields[i] = field{
@@ -344,7 +480,8 @@ func (p *printer) opArgs(addr, method string, op wsdl.Operation, input, output w
 				InputArg: v.Name,
 			}
 		}
-		args.output = []string{args.ReturnType}
+		//make a "virtual output field consisting of the return type
+		args.OutputFields = []field{{Name: args.ReturnType, Type: args.ReturnType}}
 	}
 	// NOTE(droyo) if we decide to name our return values,
 	// we have to change this too.

@@ -10,76 +10,13 @@ import "aqwari.net/xml/internal/gen"
 // code base grows, the weaker the argument against external
 // dependencies becomes.
 var helpers string = `
-	type Client struct {
-		HTTPClient *http.Client
-		ResponseHook func(*http.Response) *http.Response
-		RequestHook func(*http.Request) *http.Request
-	}
+type SOAPdoer interface {
+	Do(ctx context.Context, action string, request any, response any) error
+}
 
-	type soapEnvelope struct {
-		XMLName struct{} ` + "`" + `xml:"http://schemas.xmlsoap.org/soap/envelope/ Envelope"` + "`" + `
-		Header []byte ` + "`" + `xml:"http://schemas.xmlsoap.org/soap/envelope/ Header"` + "`" + `
-		Body struct {
-			Message interface{}
-			Fault *struct {
-				String string ` + "`xml:\"faultstring,omitempty\"`" + `
-				Code string ` + "`xml:\"faultcode,omitempty\"`" + `
-				Detail string ` + "`xml:\"detail,omitempty\"`" + `
-			} ` + "`xml:\"http://schemas.xmlsoap.org/soap/envelope/ Fault,omitempty\"`" + `
-		}` + "`" + `xml:"http://schemas.xmlsoap.org/soap/envelope/ Body"` + "`" + `
-	}
-
-	func (c *Client) do(ctx context.Context, method, uri, action string, in, out interface{}) error {
-		var body io.Reader
-		var envelope soapEnvelope
-
-		if method == "POST" || method == "PUT" {
-			var buf bytes.Buffer
-			envelope.Body.Message = in
-			enc := xml.NewEncoder(&buf)
-			if err := enc.Encode(envelope); err != nil {
-				return err
-			}
-			if err := enc.Flush(); err != nil {
-				return err
-			}
-			body = &buf
-		}
-		req, err := http.NewRequest(method, uri, body)
-		if err != nil {
-			return err
-		}
-		req.Header.Set("SOAPAction", action)
-		req = req.WithContext(ctx)
-		if c.RequestHook != nil {
-			req = c.RequestHook(req)
-		}
-
-		httpClient := c.HTTPClient
-		if httpClient == nil {
-			httpClient = http.DefaultClient
-		}
-
-		rsp, err := httpClient.Do(req)
-		if err != nil {
-			return err
-		}
-		defer rsp.Body.Close()
-
-		if c.ResponseHook != nil {
-			rsp = c.ResponseHook(rsp)
-		}
-
-		dec := xml.NewDecoder(rsp.Body)
-		envelope.Body.Message = out
-		if err := dec.Decode(&envelope); err != nil {
-			return err
-		}
-		if envelope.Body.Fault != nil {
-			return fmt.Errorf("%s: %s", envelope.Body.Fault.Code, envelope.Body.Fault.String)
-		}
-		return nil
-	}
+type Client struct {
+	SOAP  SOAPdoer
+}
 `
 
 func (p *printer) addHelpers() {
@@ -89,5 +26,5 @@ func (p *printer) addHelpers() {
 		// this should never happen
 		panic(err)
 	}
-	p.file.Decls = append(p.file.Decls, decls...)
+	p.decl = append(p.decl, decls...)
 }

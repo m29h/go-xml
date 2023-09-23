@@ -68,9 +68,9 @@ type Element struct {
 	// Default overrides the zero value of this element.
 	Default string
 	// Any additional attributes provided in the <xs:element> element.
-	Attr []xml.Attr
+	attr []xml.Attr
 	// Used for resolving prefixed strings in extra attribute values.
-	xmltree.Scope
+	scope xmltree.Scope
 }
 
 // An Attribute describes the key=value pairs that may appear within the

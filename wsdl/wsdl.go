@@ -75,6 +75,7 @@ type Part struct {
 type Operation struct {
 	Doc           string
 	SOAPAction    string
+	DocumentStyle bool
 	Name          xml.Name
 	Input, Output xml.Name
 }
@@ -187,6 +188,7 @@ func parseOperations(targetNS string, root, port *xmltree.Element) []Operation {
 				for _, el := range bind.SearchFunc(bindingSearch) {
 					for _, soapOp := range el.Search(soapNS, "operation") {
 						oper.SOAPAction = soapOp.Attr("", "soapAction")
+						oper.DocumentStyle = soapOp.Attr("", "style") == "document"
 					}
 				}
 				ops = append(ops, oper)

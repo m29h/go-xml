@@ -874,7 +874,7 @@ func parseElement(ns string, efd FormOption, afd FormOption, el *xmltree.Element
 		Abstract: parseBool(el.Attr("", "abstract")),
 		Nillable: parseBool(el.Attr("", "nillable")),
 		Plural:   parsePlural(el),
-		Scope:    el.Scope,
+		scope:    el.Scope,
 	}
 	if el.Attr("", "type") == "" {
 		e.Type = AnyType
@@ -890,7 +890,7 @@ func parseElement(ns string, efd FormOption, afd FormOption, el *xmltree.Element
 		}
 	})
 	e.Doc = string(doc)
-	e.Attr = el.StartElement.Attr
+	e.attr = el.StartElement.Attr
 	return e
 }
 

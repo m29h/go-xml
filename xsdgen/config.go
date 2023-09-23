@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"go/ast"
 	"go/format"
+	"go/token"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"aqwari.net/xml/internal/gen"
@@ -30,6 +32,7 @@ type Config struct {
 	applyXMLNameToTopLevelElementTypes bool
 	preprocessType                     typeTransform
 	postprocessType                    specTransform
+	postprocessFile                    fileTransform
 	// Helper functions
 	helperFuncs map[string]*ast.FuncDecl
 	helperTypes map[xml.Name]spec
@@ -57,6 +60,7 @@ type Config struct {
 type typeTransform func(xsd.Schema, xsd.Type) xsd.Type
 type propertyFilter func(interface{}) bool
 type specTransform func(spec) spec
+type fileTransform func(ast.File) ast.File
 
 func (cfg *Config) logf(format string, v ...interface{}) {
 	if cfg.logger != nil && cfg.loglevel > 0 {
@@ -134,6 +138,38 @@ func LogLevel(level int) Option {
 		cfg.loglevel = level
 		return LogLevel(prev)
 	}
+}
+
+// XMLPackage sets the package import path that should be used in
+// the generated code
+func XMLPackage(packageName string) Option {
+	return func(cfg *Config) Option {
+		prev := cfg.postprocessFile
+		pkg := packageName
+		cfg.postprocessFile = func(f ast.File) ast.File {
+			if prev != nil {
+				f = prev(f)
+			}
+			return addImport(f, pkg)
+		}
+		return nil
+	}
+}
+
+func addImport(file ast.File, pkg string) ast.File {
+	file.Decls = append([]ast.Decl{&ast.GenDecl{
+		Tok:    token.IMPORT,
+		TokPos: file.Package,
+		Specs: []ast.Spec{&ast.ImportSpec{
+			Path: &ast.BasicLit{
+				Kind:  token.STRING,
+				Value: strconv.Quote(pkg),
+			},
+			Name: &ast.Ident{
+				Name: "xml",
+			}}},
+	}}, file.Decls...)
+	return file
 }
 
 func replacePropertyFilter(p *propertyFilter, fn propertyFilter) Option {
@@ -535,6 +571,10 @@ func (cfg *Config) public(name xml.Name) string {
 	if cfg.nameTransform != nil {
 		name = cfg.nameTransform(name)
 	}
+	//always ensure a name start with a character
+	if strings.TrimSpace(name.Local) == "" {
+		name.Local = "X"
+	}
 	return cases.Title(language.Und, cases.NoLower).String(name.Local)
 }
 
@@ -680,13 +720,13 @@ func (cfg *Config) addStandardHelpers() {
 	cfg.helperTypes = make(map[xml.Name]spec)
 	timeTypes := map[xsd.Builtin]string{
 		xsd.Date:       "2006-01-02",
-		xsd.DateTime:   "2006-01-02T15:04:05.999999999",
+		xsd.DateTime:   "2006-01-02T15:04:05.999999",
 		xsd.GDay:       "---02",
 		xsd.GMonth:     "--01",
 		xsd.GMonthDay:  "--01-02",
 		xsd.GYear:      "2006",
 		xsd.GYearMonth: "2006-01",
-		xsd.Time:       "15:04:05.999999999",
+		xsd.Time:       "15:04:05.999999",
 	}
 
 	for timeType, timeSpec := range timeTypes {

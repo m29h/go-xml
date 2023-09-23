@@ -211,7 +211,8 @@ func ExampleSOAPArrayAsSlice() {
 		xsdgen.SOAPArrayAsSlice(),
 		xsdgen.LogOutput(log.New(os.Stderr, "", 0)),
 		xsdgen.LogLevel(3),
-		xsdgen.IgnoreAttributes("offset", "id", "href"))
+		xsdgen.IgnoreAttributes("offset", "id", "href"),
+	)
 
 	out, err := cfg.GenSource(doc)
 	if err != nil {

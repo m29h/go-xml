@@ -1,21 +1,20 @@
 <?xml version="1.0"?>
-<books xmlns="urn:books"
-   xmlns:books="urn:books">
-   <book books:name="bk001">
-      <author>Writer</author>
-      <title>The First Book</title>
-      <genre>Fiction</genre>
-      <price>44.95</price>
-      <pub_date>2000-10-01Z</pub_date>
-      <review>An amazing story of nothing.</review>
-   </book>
+<_:books xmlns:_="urn:books">
+   <_:book _:name="bk001">
+      <_:author>Writer</_:author>
+      <_:title>The First Book</_:title>
+      <_:genre>Fiction</_:genre>
+      <_:price>44.95</_:price>
+      <_:pub_date>2000-10-01Z</_:pub_date>
+      <_:review>An amazing story of nothing.</_:review>
+   </_:book>
 
-   <book books:name="bk002">
-      <author>Poet</author>
-      <title>The Poets First Poem</title>
-      <genre>Poem</genre>
-      <price>24.95</price>
-      <review>Least poetic poems.</review>
-      <pub_date>2003-12-01Z</pub_date>
-   </book>
-</books>
+   <_:book _:name="bk002">
+      <_:author>Poet</_:author>
+      <_:title>The Poets First Poem</_:title>
+      <_:genre>Poem</_:genre>
+      <_:price>24.95</_:price>
+      <_:review>Least poetic poems.</_:review>
+      <_:pub_date>2003-12-01Z</_:pub_date>
+   </_:book>
+</_:books>

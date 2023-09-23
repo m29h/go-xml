@@ -256,6 +256,11 @@ func (code *Code) GenAST() (*ast.File, error) {
 		pkgname = "ws"
 	}
 	file.Name = ast.NewIdent(pkgname)
+
+	if code.cfg.postprocessFile != nil {
+		file = code.cfg.postprocessFile(file)
+	}
+
 	return &file, nil
 }
 
@@ -838,23 +843,20 @@ func (cfg *Config) genComplexType(t *xsd.ComplexType) ([]spec, error) {
 
 func (cfg *Config) genComplexTypeMethods(t *xsd.ComplexType, overrides []fieldOverride) (marshal, unmarshal *ast.FuncDecl, err error) {
 	var data struct {
-		Overrides []fieldOverride
-		Type      string
-		//		Name       xml.Name
+		Overrides  []fieldOverride
+		Type       string
+		Name       xml.Name
 		XMLNameTag string
+		TopLevel   bool
 	}
+	data.TopLevel = t.TopLevel
 	data.Overrides = overrides
 	for i, o := range data.Overrides {
 		data.Overrides[i].Tag = o.BaseField.Tag.(*ast.BasicLit).Value
 		data.Overrides[i].Name = o.BaseField.Name.(*ast.Ident).Name
 	}
 	data.Type = cfg.public(t.Name)
-	/*
-		data.Name = t.Name
-		start.Name.Space = "{{.Name.Space}}"
-		start.Name.Local = "{{.Name.Local}}"
-		XMLName xml.Name {{.XMLNameTag}}
-	*/
+	data.Name = t.Name
 
 	data.XMLNameTag = fmt.Sprintf("`xml:\"%s %s\"`", t.Name.Space, t.Name.Local)
 
@@ -879,6 +881,10 @@ func (cfg *Config) genComplexTypeMethods(t *xsd.ComplexType, overrides []fieldOv
 				*overlay.{{.Name}} = "{{.DefaultValue}}"
 			}
 			{{end}}
+			{{end}}
+			{{if .TopLevel}}
+			start.Name.Space = "{{.Name.Space}}"
+			start.Name.Local = "{{.Name.Local}}"
 			{{end}}
 
 			return d.DecodeElement(&overlay, &start)
@@ -917,6 +923,10 @@ func (cfg *Config) genComplexTypeMethods(t *xsd.ComplexType, overrides []fieldOv
 			{{- range .Overrides}}
 			layout.{{.Name}} = (*{{.ToType}})({{.Pointer}}layout.T.{{.Name}})
 			{{end -}}
+			{{if .TopLevel}}
+			start.Name.Space = "{{.Name.Space}}"
+			start.Name.Local = "{{.Name.Local}}"
+			{{end}}
 
 			return e.EncodeElement(layout, start)
 		`, data).Decl()

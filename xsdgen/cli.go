@@ -14,10 +14,9 @@ import (
 	"aqwari.net/xml/xsd"
 )
 
-// GenCode reads all xml schema definitions from the provided
-// data. If succesful, the returned *Code value can be used to
-// lookup identifiers and generate Go code.
-func (cfg *Config) GenCode(data ...[]byte) (*Code, error) {
+// ParseSchemas reads all xml schema definitions from the provided
+// data. If succesful, the array of Schemas are returned for lookup identifiers
+func (cfg *Config) ParseSchemas(data ...[]byte) ([]xsd.Schema, error) {
 	if len(cfg.namespaces) == 0 {
 		cfg.Option(Namespaces(lookupTargetNS(data...)...))
 		cfg.debugf("setting namespaces to %q", cfg.namespaces)
@@ -26,6 +25,25 @@ func (cfg *Config) GenCode(data ...[]byte) (*Code, error) {
 	if err != nil {
 		return nil, err
 	}
+	return deps, nil
+}
+
+// GenCode reads all xml schema definitions from the provided
+// data. If succesful, the returned *Code value can be used to
+// lookup identifiers and generate Go code.
+func (cfg *Config) GenCode(data ...[]byte) (*Code, error) {
+	return cfg.GenCodeWithSchema(nil, data...)
+}
+
+// GenCode reads all xml schema definitions from the provided
+// data. If succesful, the returned *Code value can be used to
+// lookup identifiers and generate Go code.
+func (cfg *Config) GenCodeWithSchema(injectedSchema *xsd.Schema, data ...[]byte) (*Code, error) {
+	deps, err := cfg.ParseSchemas(data...)
+	if err != nil {
+		return nil, err
+	}
+
 	primaries := make([]xsd.Schema, 0, len(cfg.namespaces))
 	for _, s := range deps {
 		for _, ns := range cfg.namespaces {
@@ -47,6 +65,10 @@ func (cfg *Config) GenCode(data ...[]byte) (*Code, error) {
 			}
 		}
 		return nil, fmt.Errorf("could not find schema for %q", strings.Join(missing, ", "))
+	}
+	if injectedSchema != nil {
+		primaries = append(primaries, *injectedSchema)
+		deps = append(deps, *injectedSchema)
 	}
 	cfg.addStandardHelpers()
 	return cfg.gen(primaries, deps)

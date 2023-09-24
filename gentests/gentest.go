@@ -2,4 +2,4 @@
 // xsdgen package.
 package gentests
 
-//go:generate go run _testgen/testgen.go
+//go:generate go run -cover _testgen/testgen.go

@@ -10,7 +10,8 @@ jobs:
     strategy:
       matrix:
         go-version: [ '1.21.x' ]
-
+    env:
+      GOCOVERDIR: /tmp/coverage
     steps:
       - uses: actions/checkout@v3
       - name: Setup Go
@@ -19,11 +20,15 @@ jobs:
           go-version: ${{ matrix.go-version }}
       - name: Generate
         run: |
+          mkdir ${GOCOVERDIR}
           go generate ./wsdlgen/examples/...
           go generate ./gentests/...
           go test ./...
       - name: Coverage
-        run: go test -coverprofile=profile.cov ./...
+        run: |
+          go test -coverprofile=${GOCOVERDIR}/testcoverage.out ./...
+          go tool covdata textfmt -i=${GOCOVERDIR} -o ${GOCOVERDIR}/profile.cov
+          sed -i 's@'"$(pwd)"'@github.com/m29h/go-xml@g' ${GOCOVERDIR}/profile.cov
       - uses: shogo82148/actions-goveralls@v1
         with:
-          path-to-profile: profile.cov
+          path-to-profile: ${{ env.GOCOVERDIR }}/profile.cov

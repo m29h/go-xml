@@ -1,4 +1,4 @@
-[![Go Reference](https://pkg.go.dev/badge/github.com/m29h/go-xml.svg)](https://pkg.go.dev/github.com/m29h/go-xml)
+# go-xml [![GoDoc](https://godoc.org/github.com/m29h/go-xml?status.svg)](https://godoc.org/github.com/m29h/go-xml) [![Tests](https://github.com/m29h/go-xml/actions/workflows/test.yml/badge.svg)](https://github.com/m29h/go-xml/actions/workflows/test.yml) [![Coverage Status](https://coveralls.io/repos/github/m29h/go-xml/badge.svg)](https://coveralls.io/github/m29h/go-xml) [![Go Report Card](https://goreportcard.com/badge/github.com/m29h/go-xml)](https://goreportcard.com/report/github.com/m29h/go-xml)
 
 ## Installation
 

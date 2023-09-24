@@ -1,7 +1,6 @@
 package xsdgen
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"go/ast"
@@ -158,6 +157,7 @@ func (cfg *Config) GenCLI(arguments ...string) error {
 		followImports                      = fs.Bool("f", false, "follow import statements; load imported references recursively into scope")
 		addJsonTags                        = fs.Bool("json", false, "add json tags to struct tag so that the json name equals the xml name")
 		targetNamespacesOnly               = fs.Bool("t", false, "restict output of types to these declared in the target namespace(s) provided")
+		xmlpkg                             = fs.String("xmlpkg", "encoding/xml", "name of the go xml package to use")
 		applyXMLNameToTopLevelElementTypes = fs.Bool("n", false, "apply XMLName to all top level element types")
 		verbose                            = fs.Bool("v", false, "print verbose output")
 		debug                              = fs.Bool("vv", false, "print debug output")
@@ -165,16 +165,28 @@ func (cfg *Config) GenCLI(arguments ...string) error {
 	fs.Var(&replaceRules, "r", "replacement rule 'regex -> repl' (can be used multiple times)")
 	fs.Var(&xmlns, "ns", "target namespace(s) to generate types for")
 
+	// Usage is a replacement usage function for the flags package.
+	fs.Usage = func() {
+		prog := os.Args[0]
+		fmt.Fprintf(fs.Output(), "Usage of %s:\n", prog)
+		fmt.Fprintf(fs.Output(), "\t%s [flags] file(s)... # files must have xsd/wsdl schema content\n", prog)
+		fmt.Fprintf(fs.Output(), "Flags:\n")
+		fs.PrintDefaults()
+	}
 	if err = fs.Parse(arguments); err != nil {
 		return err
 	}
 	if fs.NArg() == 0 {
-		return errors.New("usage: xsdgen [-ns xmlns] [-r rule] [-o file] [-pkg pkg] file")
+		fs.Usage()
+		return nil
 	}
 	if *debug {
 		cfg.Option(LogLevel(5))
 	} else if *verbose {
 		cfg.Option(LogLevel(1))
+	}
+	if *xmlpkg != "encoding/xml" {
+		cfg.Option(XMLPackage(*xmlpkg))
 	}
 	cfg.Option(Namespaces(xmlns...))
 	cfg.Option(FollowImports(*followImports))

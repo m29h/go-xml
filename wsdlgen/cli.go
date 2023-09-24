@@ -1,8 +1,8 @@
 package wsdlgen
 
 import (
-	"errors"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 
@@ -33,16 +33,27 @@ func (cfg *Config) GenCLI(arguments ...string) error {
 		packageName  = fs.String("pkg", "", "name of the generated package")
 		comment      = fs.String("c", "", "First line of package-level comments")
 		output       = fs.String("o", "wsdlgen_output.go", "name of the output file")
+		xmlpkg       = fs.String("xmlpkg", "encoding/xml", "name of the go xml package to use")
 		verbose      = fs.Bool("v", false, "print verbose output")
 		debug        = fs.Bool("vv", false, "print debug output")
 	)
 	fs.Var(&replaceRules, "r", "replacement rule 'regex -> repl' (can be used multiple times)")
 	fs.Var(&ports, "port", "gen code for this port (can be used multiple times)")
+
+	// Usage is a replacement usage function for the flags package.
+	fs.Usage = func() {
+		prog := os.Args[0]
+		fmt.Fprintf(fs.Output(), "Usage of %s:\n", prog)
+		fmt.Fprintf(fs.Output(), "\t%s [flags] file(s)... # files must have xsd/wsdl schema content\n", prog)
+		fmt.Fprintf(fs.Output(), "Flags:\n")
+		fs.PrintDefaults()
+	}
 	if err = fs.Parse(arguments); err != nil {
 		return err
 	}
 	if fs.NArg() == 0 {
-		return errors.New("usage: wsdlgen [-r rule] [-o file] [-port name] [-pkg pkg] file")
+		fs.Usage()
+		return nil
 	}
 
 	if *debug {
@@ -53,6 +64,9 @@ func (cfg *Config) GenCLI(arguments ...string) error {
 	if len(*packageName) > 0 {
 		cfg.Option(PackageName(*packageName))
 		cfg.XSDOption(xsdgen.PackageName(*packageName))
+	}
+	if *xmlpkg != "encoding/xml" {
+		cfg.XSDOption(xsdgen.XMLPackage(*xmlpkg))
 	}
 	if len(*comment) > 0 {
 		cfg.Option(PackageComment(*comment))

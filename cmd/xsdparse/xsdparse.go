@@ -11,15 +11,24 @@ import (
 )
 
 var (
-	TargetNS = flag.String("ns", "", "Namespace of schea to print")
+	TargetNS = flag.String("ns", "", "Namespace of schema to print")
 )
 
 func main() {
 	log.SetFlags(0)
+	// Usage is a replacement usage function for the flags package.
+	flag.Usage = func() {
+		prog := os.Args[0]
+		fmt.Fprintf(os.Stderr, "Usage of %s:\n", prog)
+		fmt.Fprintf(os.Stderr, "\t%s [flags] file(s)... # files must have xsd/wsdl schema content\n", prog)
+		fmt.Fprintf(os.Stderr, "Flags:\n")
+		flag.PrintDefaults()
+	}
 	flag.Parse()
 
 	if flag.NArg() < 1 {
-		log.Fatalf("Usage: %s [-ns xmlns] file.xsd ...", os.Args[0])
+		flag.Usage()
+		return
 	}
 
 	docs := make([][]byte, 0, flag.NArg())

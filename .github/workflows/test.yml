@@ -26,7 +26,7 @@ jobs:
           go test ./...
       - name: Coverage
         run: |
-          go test -coverprofile=${GOCOVERDIR}/testcoverage.out ./...
+          go test -cover ./... -test.gocoverdir=${GOCOVERDIR}
           go tool covdata textfmt -i=${GOCOVERDIR} -o ${GOCOVERDIR}/profile.cov
           sed -i 's@'"$(pwd)"'@github.com/m29h/go-xml@g' ${GOCOVERDIR}/profile.cov
       - uses: shogo82148/actions-goveralls@v1
